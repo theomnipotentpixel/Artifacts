@@ -1,0 +1,17 @@
+[
+    {
+        "className": "pixl_ArtifactGallery",
+        "name": "Artifact Gallery",
+        "description": "A place to view all your currently unused artifacts!",
+        "food": 0,
+        "wood": 0,
+        "stone": 0,
+        "machineParts": 0,
+        "refinedMetal": 0,
+        "computerChips": 0,
+        "graphene": 0,
+        "knowledge": 0,
+        "category": "Unique Buildings",
+        "specialInfo": []
+    }
+]
