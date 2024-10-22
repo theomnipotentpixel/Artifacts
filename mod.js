@@ -72,13 +72,13 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
 
         let texture = Resources.getTexture(artifact.spr)
         if (!texture.valid) texture = Resources.getTexture("spr_pixl_artifact_unknown")
-        let artifactButton = this.city.gui.windowAddSimpleButton(texture, () => {
-            // _this.materialFrom = _i;
-        }, " ")
-        artifactButton.container.padding = { left : 4, right : 4, top : 4, bottom : 4}
-        artifactButton.container.margin = { left : 4, right : 4, top : 4, bottom : 4}
-        artifactButton.rect.width = 28;
-        artifactButton.rect.height = 28;
+        // let artifactButton = this.city.gui.windowAddSimpleButton(texture, () => {
+        //     // _this.materialFrom = _i;
+        // }, " ")
+        // artifactButton.container.padding = { left : 4, right : 4, top : 4, bottom : 4}
+        // artifactButton.container.margin = { left : 4, right : 4, top : 4, bottom : 4}
+        // artifactButton.rect.width = 28;
+        // artifactButton.rect.height = 28;
 
         //gui,stage,parent,action,isActive,onHover,buttonSpriteName,backColor,frontColor,autoSetProgress  	infoButton.container.addChild(new gui_ContainerHolder(infoButton.container,stage,new PIXI.Sprite(Resources.getTexture(textureName))));
         this.progress += 0.05;
@@ -87,14 +87,14 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         let col = ((255 - Math.round(this.progress * 255)) << 16) +
             ((Math.round(this.progress * 255)) << 8);
 
-        let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, artifactButton, ()=>{}, ()=>{return true},
+        let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{}, ()=>{return true},
         ()=>{
-            _this.city.gui.tooltip.setText(artifactButton, `${artifact.data.amount} / 100`)
+            _this.city.gui.tooltip.setText(this.city.gui.windowInner, `${artifact.data.amount} / 100`)
         }, "spr_button", 10526880, col, ()=>{return _this.progress}
         );
         upgradeProgressBar.padding = { left : 2, right : 3, top : 2, bottom : 1}
-        upgradeProgressBar.container.addChild(new gui_ContainerHolder(upgradeProgressBar.container,this.city.gui.innerWindowStage,new PIXI.Sprite(Resources.getTexture("spr_icon_boost")), { left : 2, right : 3, top : 1, bottom : 1}));
-        artifactButton.container.addChild(upgradeProgressBar);
+        upgradeProgressBar.container.addChild(new gui_ContainerHolder(upgradeProgressBar.container,this.city.gui.innerWindowStage,new PIXI.Sprite(texture), { left : 0, right : 0, top : 0, bottom : 0}));
+        this.city.gui.windowInner.addChild(upgradeProgressBar);
         
     }
 }}, "spr_artifact_storage",
