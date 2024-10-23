@@ -13,7 +13,7 @@ let ARTIFACT_TIERS = [
     {tier:"_", amountNeeded: Infinity},
 ]
 let A_M = {};
-//                                   string,   string,     string,                string,         function(thisArtifact), function(thisArtifact), function(thisArtifact, newAmount, isFirst)
+//                                   string,   string,     string,                string,         function(thisArtifact), function(thisArtifact), function(thisArtifact, newAmount, isFirst), bool
 ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange, isUnique){
     ARTIFACTS.a[modName + "::" + artifactName] = {
         id: modName + "::" + artifactName,
@@ -164,7 +164,19 @@ ARTIFACTS.registerArtifact("artifacts_base", "rocket_fuel_cost", "Rocket Fuel Co
 ARTIFACTS.registerArtifact("artifacts_base", "cheaper_buildings", "Cheaper Buildings", "spr_pixl_artifact_unknown",(a)=>{
     return "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)"
 }, (a)=>{
-    return "";
+    return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
+}, (a, amt, f)=>{}, false);
+
+ARTIFACTS.registerArtifact("artifacts_base", "cheaper_upgrades", "Cheaper Upgrades", "spr_pixl_artifact_unknown",(a)=>{
+    return "Reduces the cost of building upgrades by 0.05% per piece! (Max 50% discount)"
+}, (a)=>{
+    return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
+}, (a, amt, f)=>{}, false);
+
+ARTIFACTS.registerArtifact("artifacts_base", "faster_factories", "Faster Factories", "spr_pixl_artifact_unknown",(a)=>{
+    return "Speeds up your factories by 0.001x per piece! (Max 2x speed)"
+}, (a)=>{
+    return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
 }, (a, amt, f)=>{}, false);
 
 let HAS_UPDATED_ARTIFACTS = true;
@@ -241,3 +253,18 @@ ModTools.onCityCreate(function(city){
     }
 } (progress_BuildingCost.prototype.getBuildingCost));
 
+(function(orig) {
+    Materials.fromBuildingUpgradesInfo = function(buildingInfo) {
+        let upgradeCost = orig.call(this, buildingInfo);
+        let mult = Math.min(1000, ARTIFACTS.a["artifacts_base::cheaper_upgrades"].data.amount) * 0.0005;
+        upgradeCost.multiply(1 - mult);
+        return upgradeCost;
+    }
+} (Materials.fromBuildingUpgradesInfo));
+
+(function(orig) {
+    buildings_MaterialConvertingFactory.prototype.possiblyBeActive = function(timeMod) {
+        let mult = 1 + Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001;
+        return orig.call(this, timeMod*mult);
+    }
+} (buildings_MaterialConvertingFactory.prototype.possiblyBeActive));
