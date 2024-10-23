@@ -1,4 +1,16 @@
 let ARTIFACTS = {a:{}};
+let DEFAULT_ARTIFACT = {
+    amount: 0,
+    discoveredPrior: false
+};
+let ARTIFACT_TIERS = [
+    {tier:"Common", amountNeeded: 1},
+    {tier:"Uncommon", amountNeeded: 20},
+    {tier:"Rare", amountNeeded: 50},
+    {tier:"Epic", amountNeeded: 250},
+    {tier:"Legendary", amountNeeded: 1000},
+    {tier:"Mythic", amountNeeded: Infinity}
+]
 let A_M = {};
 //                                   string,   string,     string,                string,         function(ARTIFACTS, thisArtifact), function(ARTIFACTS, thisArtifact), function(ARTIFACTS, thisArtifact, newAmount, isFirst)
 ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange){
@@ -9,17 +21,14 @@ ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName
         currentEffect: artifactCurrentEffectText,
         onChange: onAmountChange,
         spr: artifactSprite,
-        data: {
-            amount: 0,
-            discoveredPrior: false
-        }
+        data: DEFAULT_ARTIFACT,
+        tier: 0
     }
     ARTIFACTS.a[modName + "::" + artifactName].getDescription = function(){return ARTIFACTS.a[modName + "::" + artifactName].description(ARTIFACTS, ARTIFACTS.a[modName + "::" + artifactName])}
     ARTIFACTS.a[modName + "::" + artifactName].getCurrentEffectText = function(){return ARTIFACTS.a[modName + "::" + artifactName].currentEffect(ARTIFACTS, ARTIFACTS.a[modName + "::" + artifactName])}
 }
 
-ARTIFACTS.gainOrLoseArtifactAmount = function(modName, artifactName, amount){
-    let id = modName + "::" + artifactName;
+ARTIFACTS.gainOrLoseArtifactAmount = function(id, amount){
     amount = Math.trunc(amount);
     if(ARTIFACTS.a[id]){
         let isFirst = false;
@@ -30,14 +39,21 @@ ARTIFACTS.gainOrLoseArtifactAmount = function(modName, artifactName, amount){
         ARTIFACTS.a[id].data.amount += amount;
         if(ARTIFACTS.a[id].data.amount < 0)
             ARTIFACTS.a[id].data.amount = 0;
-        ARTIFACTS.a[id].onChange(ARTIFACTS, ARTIFACTS.a[id], ARTIFACTS.a[id].data.amount, isFirst)
+
+        for(let i = 0; i < ARTIFACT_TIERS.length; i++){
+            if(ARTIFACTS.a[id].data.amount < ARTIFACT_TIERS[i+1].amountNeeded){
+                ARTIFACTS.a[id].tier = i;
+                break;
+            }
+        }
+
+        ARTIFACTS.a[id].onChange(ARTIFACTS, ARTIFACTS.a[id], ARTIFACTS.a[id].data.amount, isFirst);
     } else {
         console.warn(`WARN: Attempted to edit artifact count of artifact "${id}", but artifact has not been registered! (ARTIFACTS.gainOrLoseArtifactAmount)`);
     }
 }
 
-ARTIFACTS.setArtifactAmount = function(modName, artifactName, amount){
-    let id = modName + "::" + artifactName;
+ARTIFACTS.setArtifactAmount = function(id, amount){
     amount = Math.max(Math.trunc(amount), 0);
     if(ARTIFACTS.a[id]){
         let isFirst = false;
@@ -46,7 +62,15 @@ ARTIFACTS.setArtifactAmount = function(modName, artifactName, amount){
             ARTIFACTS.a[id].data.discoveredPrior = true;
         }
         ARTIFACTS.a[id].data.amount = amount;
-        ARTIFACTS.a[id].onChange(ARTIFACTS, ARTIFACTS.a[id], ARTIFACTS.a[id].amount, isFirst)
+
+        for(let i = 0; i < ARTIFACT_TIERS.length; i++){
+            if(ARTIFACTS.a[id].data.amount < ARTIFACT_TIERS[i+1].amountNeeded){
+                ARTIFACTS.a[id].tier = i;
+                break;
+            }
+        }
+
+        ARTIFACTS.a[id].onChange(ARTIFACTS, ARTIFACTS.a[id], ARTIFACTS.a[id].amount, isFirst);
     } else {
         console.warn(`WARN: Attempted to edit artifact count of artifact "${id}", but artifact has not been registered! (ARTIFACTS.setArtifactAmount)`);
     }
@@ -59,9 +83,8 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
     },
     addWindowInfoLines: function(){
         superClass.prototype.addWindowInfoLines.call(this);
-        console.log(ARTIFACTS.a)
         for(const [id, artifact] of Object.entries(ARTIFACTS.a)){
-            artifact.data.amount++;
+            ARTIFACTS.gainOrLoseArtifactAmount(id, 1)
             console.log(artifact);
             this.addArtifactDisplay(artifact);
         }
@@ -89,7 +112,7 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
 
         let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{}, ()=>{return true},
         ()=>{
-            _this.city.gui.tooltip.setText(this.city.gui.windowInner, `${artifact.data.amount} / 100`)
+            _this.city.gui.tooltip.setText(this.city.gui.windowInner, `${ARTIFACT_TIERS[artifact.tier].tier}\n${artifact.data.amount} / 100 left for upgrade`)
         }, "spr_button", 10526880, col, ()=>{return _this.progress}
         );
         upgradeProgressBar.padding = { left : 2, right : 3, top : 2, bottom : 1}
@@ -107,23 +130,30 @@ function(queue){
 
 ARTIFACTS.registerArtifact("artifacts_base", "test", "Test", "spr_pixl_artifact_unknown",(artifacts, a)=>{return "desc" + a.amount}, (artifacts, a)=>{return "effect" + a.amount}, (artifacts, a, amt, f)=>{console.log(amt, f)});
 
-ModTools.addSaveData("pixl::artifacts",
+let HAS_UPDATED_ARTIFACTS = true;
+
+ModTools.addSaveDataEarly("pixl::artifacts",
 function(city, queue, version){
     let t = {};
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
         t[k] = v.data
     }
-    console.log(t);
+    // console.log(t);
     queue.addString(JSON.stringify(t));
 },
 function(city, queue, version){
-    A_M = JSON.parse(queue.readString());
-    console.log(A_M);
-}, 0);
-
-ModTools.onCityCreate(function(){
-    for (const [k, v] of Object.entries(A_M)) {
-        ARTIFACTS.a[k].data = v.data;
+    let t = JSON.parse(queue.readString());
+    console.log(t);
+    for (const [k, v] of Object.entries(t)) {
+        ARTIFACTS.a[k].data = v;
     }
     console.log(JSON.stringify(ARTIFACTS.a));
+}, 0);
+
+
+// a bit of a hack, as this needs to run AFTER mod data has loaded, but onCityCreate runs BEFORE mod data loading
+ModTools.onCityCreate(function(city){
+    for (const [k, v] of Object.entries(ARTIFACTS.a)) {
+        ARTIFACTS.a[k].data = DEFAULT_ARTIFACT;
+    }
 });
