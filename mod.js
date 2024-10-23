@@ -9,11 +9,12 @@ let ARTIFACT_TIERS = [
     {tier:"Rare", amountNeeded: 50},
     {tier:"Epic", amountNeeded: 250},
     {tier:"Legendary", amountNeeded: 1000},
-    {tier:"Mythic", amountNeeded: Infinity}
+    {tier:"Mythic", amountNeeded: 10000},
+    {tier:"_", amountNeeded: Infinity},
 ]
 let A_M = {};
-//                                   string,   string,     string,                string,         function(ARTIFACTS, thisArtifact), function(ARTIFACTS, thisArtifact), function(ARTIFACTS, thisArtifact, newAmount, isFirst)
-ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange){
+//                                   string,   string,     string,                string,         function(thisArtifact), function(thisArtifact), function(thisArtifact, newAmount, isFirst)
+ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange, isUnique){
     ARTIFACTS.a[modName + "::" + artifactName] = {
         id: modName + "::" + artifactName,
         displayName: artifactDisplayName,
@@ -22,10 +23,11 @@ ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName
         onChange: onAmountChange,
         spr: artifactSprite,
         data: DEFAULT_ARTIFACT,
-        tier: 0
+        tier: 0,
+        isUnique: isUnique
     }
-    ARTIFACTS.a[modName + "::" + artifactName].getDescription = function(){return ARTIFACTS.a[modName + "::" + artifactName].description(ARTIFACTS, ARTIFACTS.a[modName + "::" + artifactName])}
-    ARTIFACTS.a[modName + "::" + artifactName].getCurrentEffectText = function(){return ARTIFACTS.a[modName + "::" + artifactName].currentEffect(ARTIFACTS, ARTIFACTS.a[modName + "::" + artifactName])}
+    ARTIFACTS.a[modName + "::" + artifactName].getDescription = function(){return ARTIFACTS.a[modName + "::" + artifactName].description(ARTIFACTS.a[modName + "::" + artifactName])}
+    ARTIFACTS.a[modName + "::" + artifactName].getCurrentEffectText = function(){return ARTIFACTS.a[modName + "::" + artifactName].currentEffect(ARTIFACTS.a[modName + "::" + artifactName])}
 }
 
 ARTIFACTS.gainOrLoseArtifactAmount = function(id, amount){
@@ -40,13 +42,15 @@ ARTIFACTS.gainOrLoseArtifactAmount = function(id, amount){
         if(ARTIFACTS.a[id].data.amount < 0)
             ARTIFACTS.a[id].data.amount = 0;
 
+        if(ARTIFACTS.a[id].isUnique)
+            ARTIFACTS.a[id].data.amount = Math.min(1, Math.max(ARTIFACTS.a[id].data.amount, 0));
+
         for(let i = 0; i < ARTIFACT_TIERS.length; i++){
             if(ARTIFACTS.a[id].data.amount < ARTIFACT_TIERS[i+1].amountNeeded){
                 ARTIFACTS.a[id].tier = i;
                 break;
             }
         }
-
         ARTIFACTS.a[id].onChange(ARTIFACTS, ARTIFACTS.a[id], ARTIFACTS.a[id].data.amount, isFirst);
     } else {
         console.warn(`WARN: Attempted to edit artifact count of artifact "${id}", but artifact has not been registered! (ARTIFACTS.gainOrLoseArtifactAmount)`);
@@ -112,7 +116,12 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
 
         let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{}, ()=>{return true},
         ()=>{
-            _this.city.gui.tooltip.setText(this.city.gui.windowInner, `${ARTIFACT_TIERS[artifact.tier].tier}\n${artifact.data.amount} / 100 left for upgrade`)
+            _this.city.gui.tooltip.setText(this.city.gui.windowInner, 
+                artifact.displayName + "\n\n" +
+                `${ARTIFACT_TIERS[artifact.tier].tier}\n${artifact.data.amount} / ${ARTIFACT_TIERS[artifact.tier+1].amountNeeded} left for upgrade\n` +
+                artifact.getDescription() + "\n" +
+                artifact.getCurrentEffectText()
+            )
         }, "spr_button", 10526880, col, ()=>{return _this.progress}
         );
         upgradeProgressBar.padding = { left : 2, right : 3, top : 2, bottom : 1}
@@ -128,7 +137,35 @@ function(queue){
 
 });
 
-ARTIFACTS.registerArtifact("artifacts_base", "test", "Test", "spr_pixl_artifact_unknown",(artifacts, a)=>{return "desc" + a.amount}, (artifacts, a)=>{return "effect" + a.amount}, (artifacts, a, amt, f)=>{console.log(amt, f)});
+ARTIFACTS.registerArtifact("artifacts_base", "bonus_happiness", "Bonus Happiness", "spr_pixl_artifact_unknown",(a)=>{
+    return "Adds 0.01 happiness per piece! Grants a bonus 0.5 happiness per tier above common!"
+}, (a)=>{
+    return "Currently adding " + (Math.floor((a.data.amount * 0.01 + a.tier * 0.5)*100)/100) + " bonus happiness!";
+}, (a, amt, f)=>{}, false);
+
+ARTIFACTS.registerArtifact("artifacts_base", "supercomputer_output", "Supercomputer Output", "spr_pixl_artifact_unknown",(a)=>{
+    return "Doubles the output of the supercomputer!"
+}, (a)=>{
+    return "";
+}, (a, amt, f)=>{}, true);
+
+ARTIFACTS.registerArtifact("artifacts_base", "machine_output", "Machine Output", "spr_pixl_artifact_unknown",(a)=>{
+    return "Doubles the output of the machine!"
+}, (a)=>{
+    return "";
+}, (a, amt, f)=>{}, true);
+
+ARTIFACTS.registerArtifact("artifacts_base", "rocket_fuel_cost", "Rocket Fuel Cost", "spr_pixl_artifact_unknown",(a)=>{
+    return "Halves the fuel cost of rocket missions!"
+}, (a)=>{
+    return "";
+}, (a, amt, f)=>{}, true);
+
+ARTIFACTS.registerArtifact("artifacts_base", "cheaper_buildings", "Cheaper Buildings", "spr_pixl_artifact_unknown",(a)=>{
+    return "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)"
+}, (a)=>{
+    return "";
+}, (a, amt, f)=>{}, false);
 
 let HAS_UPDATED_ARTIFACTS = true;
 
@@ -145,15 +182,62 @@ function(city, queue, version){
     let t = JSON.parse(queue.readString());
     console.log(t);
     for (const [k, v] of Object.entries(t)) {
-        ARTIFACTS.a[k].data = v;
+        if(ARTIFACTS.a[k])
+            ARTIFACTS.a[k].data = v;
     }
     console.log(JSON.stringify(ARTIFACTS.a));
 }, 0);
 
-
-// a bit of a hack, as this needs to run AFTER mod data has loaded, but onCityCreate runs BEFORE mod data loading
+// for brand new worlds
 ModTools.onCityCreate(function(city){
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
         ARTIFACTS.a[k].data = DEFAULT_ARTIFACT;
     }
 });
+
+(function(orig) {
+    simulation_Happiness.prototype.getActualHappiness = function() {
+        let happiness = orig.call(this);
+        let bonusHappiness = ARTIFACTS.a["artifacts_base::bonus_happiness"].data.amount * 0.01 + ARTIFACTS.a["artifacts_base::bonus_happiness"].tier * 0.5;
+        return happiness + bonusHappiness;
+    }
+} (simulation_Happiness.prototype.getActualHappiness));
+
+(function(orig) {
+    buildings_Supercomputer.prototype.get_knowledgePerDay = function() {
+        let knowledgePerDay = orig.call(this);
+        let mult = ARTIFACTS.a["artifacts_base::supercomputer_output"].data.amount + 1;
+        return knowledgePerDay * mult;
+    }
+} (buildings_Supercomputer.prototype.get_knowledgePerDay));
+
+(function(orig) {
+    buildings_TheContraption.prototype.setReward = function() {
+        let mult = ARTIFACTS.a["artifacts_base::machine_output"].data.amount + 1;
+        let tmp = this.city.simulation.bonuses.theMachineBoost;
+        this.city.simulation.bonuses.theMachineBoost *= mult;
+        orig.call(this);
+        this.city.simulation.bonuses.theMachineBoost = tmp;
+    }
+} (buildings_TheContraption.prototype.get_knowledgePerDay));
+
+(function(orig) {
+    simulation_RocketMission.prototype.fuelCost = function() {
+        let fuel_cost = orig.call(this);
+        let mult = ARTIFACTS.a["artifacts_base::rocket_fuel_cost"].data.amount + 1;
+        return fuel_cost / mult;
+    }
+} (simulation_RocketMission.prototype.fuelCost));
+
+(function(orig) {
+    progress_BuildingCost.prototype.getBuildingCost = function(buildingInfo) {
+        let buildingCost = orig.call(this, buildingInfo);
+        let mult = Math.min(1000, ARTIFACTS.a["artifacts_base::cheaper_buildings"].data.amount) * 0.0005;
+        buildingCost.multiply(1 - mult);
+        // buildingCost.multiply(100);
+        // buildingCost.roundAll();
+        // buildingCost.multiply(0.01);
+        return buildingCost;
+    }
+} (progress_BuildingCost.prototype.getBuildingCost));
+
