@@ -30,6 +30,18 @@ ARTIFACTS.getAllIds = function(includeUniques, includeMaxed){
     return ids;
 }
 
+ARTIFACTS.discoveryMultipliers = {
+    artifacts_base: 1
+};
+
+ARTIFACTS.getDiscoveryMultiplier = function(){
+    let mult = 1;
+    for (const [k, v] of Object.entries(ARTIFACTS.discoveryMultipliers)) {
+        mult *= v;
+    }
+    return mult;
+}
+
 // generates n random artifacts where min and max are both inclusive
 ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques){
     if(allowUniques == null)
@@ -245,6 +257,14 @@ ARTIFACTS.registerArtifact("artifacts_base", "faster_factories", "Faster Factori
     return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
 }, (a, amt, f)=>{}, false);
 
+ARTIFACTS.registerArtifact("artifacts_base", "artifact_discovery_mult", "Higher ARtifact Discovery Chance", "spr_pixl_artifact_unknown",(a)=>{
+    return "Increase your artifact discovery chance by 0.1% per piece!"
+}, (a)=>{
+    return `Current boost: +${(a.data.amt * 0.001).toFixed(2)}%`;
+}, (a, amt, f)=>{
+    ARTIFACTS.discoveryMultipliers = amt * 0.001 + 1;
+}, false);
+
 ARTIFACTS.registerArtifact("artifacts_base", "supercomputer_output", "Supercomputer Output", "spr_pixl_artifact_unknown",(a)=>{
     return "Doubles the output of the supercomputer!"
 }, (a)=>{
@@ -270,7 +290,7 @@ ARTIFACTS.registerArtifact("artifacts_base", "extra_housing", "Bigger Houses", "
 }, (a, amt, f)=>{}, true);
 
 ARTIFACTS.registerArtifact("artifacts_base", "bonus_housing_quality", "Fancier Houses", "spr_pixl_artifact_unknown",(a)=>{
-    return "Adds 10 housing quality to every house! (Still capped at 100 quality)"
+    return "Adds 10 housing quality to every house!"
 }, (a)=>{
     return "";
 }, (a, amt, f)=>{}, true);
