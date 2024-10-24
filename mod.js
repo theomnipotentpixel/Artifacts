@@ -166,8 +166,10 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
             }
 
             let artifactDisp = this.addArtifactDisplay(artifact);
-            row.addChild(artifactDisp);
-            row.addChild(new gui_GUISpacing(row, new common_Point(2,10)));
+            if(artifactDisp){
+                row.addChild(artifactDisp);
+                row.addChild(new gui_GUISpacing(row, new common_Point(2,10)));
+            }
         }
         this.city.gui.windowInner.addChild(row);
         this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,10)));
@@ -232,7 +234,7 @@ function(queue){
 function(queue){
 
 });
-//43129
+
 ARTIFACTS.registerArtifact("artifacts_base", "bonus_happiness", "Bonus Happiness", "spr_pixl_artifact_unknown",(a)=>{
     return "Adds 0.01 happiness per piece! Grants a bonus 0.5 happiness per tier above common!"
 }, (a)=>{
