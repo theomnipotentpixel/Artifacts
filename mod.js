@@ -409,7 +409,3 @@ ModTools.onCityCreate(function(city){
         return orig.call(this) + ARTIFACTS.a["artifacts_base::bonus_housing_quality"].data.amount * 10;
     }
 } (Permanent.prototype.get_attractiveness));
-
-// buildings_House, buildings_WorkWithHome, buildings_RedwoodTreeHouse
-// .prototype.get_residentCapacity
-
