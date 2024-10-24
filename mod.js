@@ -259,7 +259,7 @@ ARTIFACTS.registerArtifact("artifacts_base", "faster_factories", "Faster Factori
     return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
 }, (a, amt, f)=>{}, false);
 
-ARTIFACTS.registerArtifact("artifacts_base", "artifact_discovery_mult", "Higher ARtifact Discovery Chance", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "artifact_discovery_mult", "Higher Artifact Discovery Chance", "spr_pixl_artifact_unknown",(a)=>{
     return "Increase your artifact discovery chance by 0.1% per piece!"
 }, (a)=>{
     return `Current boost: +${(a.data.amt * 0.001).toFixed(2)}%`;
@@ -366,9 +366,6 @@ ModTools.onCityCreate(function(city){
         let buildingCost = orig.call(this, buildingInfo);
         let mult = Math.min(1000, ARTIFACTS.a["artifacts_base::cheaper_buildings"].data.amount) * 0.0005;
         buildingCost.multiply(1 - mult);
-        // buildingCost.multiply(100);
-        // buildingCost.roundAll();
-        // buildingCost.multiply(0.01);
         return buildingCost;
     }
 } (progress_BuildingCost.prototype.getBuildingCost));
