@@ -13,6 +13,56 @@ let ARTIFACT_TIERS = [
     {tier:"_", amountNeeded: Infinity},
 ]
 let A_M = {};
+
+ARTIFACTS.getAllIds = function(includeUniques, includeMaxed){
+    if(includeUniques == null)
+        includeUniques = true;
+    if(includeMaxed == null)
+        includeMaxed = true;
+    let ids = [];
+    for (const [k, v] of Object.entries(ARTIFACTS.a)) {
+        if(!includeUniques && v.isUnique)
+            continue;
+        if((ARTIFACT_TIERS[v.tier+1].amountNeeded == Infinity && !includeMaxed) || (v.isUnique && v.data.amount == 1))
+            continue;
+        ids.push(k);
+    }
+    return ids;
+}
+
+// generates n random artifacts where min and max are both inclusive
+ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques){
+    if(allowUniques == null)
+        allowUniques = false;
+    let allApplicable = ARTIFACTS.getAllIds(allowUniques, false);
+    let generatedArtifacts = {};
+    let amountToGenerate = random_Random.getInt(amountMin, amountMax+1);
+
+    for(let i = 0; i < amountToGenerate; i++){
+        let artifact = random_Random.fromArray(allApplicable);
+        if(generatedArtifacts[artifact] == null)
+            generatedArtifacts[artifact] = 1;
+        else
+            generatedArtifacts[artifact] += 1;
+    }
+
+    for (const [k, v] of Object.entries(generatedArtifacts)) {
+        ARTIFACTS.gainOrLoseArtifactAmount(k, v);
+    }
+}
+
+ARTIFACTS.updateTiers = function(){
+    let allArtifacts = ARTIFACTS.getAllIds();
+    for(let id of allArtifacts){
+        for(let i = 0; i < ARTIFACT_TIERS.length; i++){
+            if(ARTIFACTS.a[id].data.amount < ARTIFACT_TIERS[i+1].amountNeeded){
+                ARTIFACTS.a[id].tier = i;
+                break;
+            }
+        }
+    }
+}
+
 //                                   string,   string,     string,                string,         function(thisArtifact), function(thisArtifact), function(thisArtifact, newAmount, isFirst), bool
 ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange, isUnique){
     ARTIFACTS.a[modName + "::" + artifactName] = {
@@ -32,6 +82,9 @@ ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName
 
 ARTIFACTS.gainOrLoseArtifactAmount = function(id, amount){
     amount = Math.trunc(amount);
+    if(amount == 0)
+        return;
+    console.log(id, amount);
     if(ARTIFACTS.a[id]){
         let isFirst = false;
         if(amount > 0 && !ARTIFACTS.a[id].data.discoveredPrior){
@@ -83,13 +136,12 @@ ARTIFACTS.setArtifactAmount = function(id, amount){
 ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
     __constructor__: function(game, stage, bgStage, city, world, position, worldPosition, id){
         superClass.call(this, game, stage, bgStage, city, world, position, worldPosition, id);
-        this.progress = -0.05
     },
     addWindowInfoLines: function(){
         superClass.prototype.addWindowInfoLines.call(this);
+        ARTIFACTS.discoverArtifacts(5, 5, true);
+        // console.log(ARTIFACTS)
         for(const [id, artifact] of Object.entries(ARTIFACTS.a)){
-            ARTIFACTS.gainOrLoseArtifactAmount(id, 1)
-            console.log(artifact);
             this.addArtifactDisplay(artifact);
         }
         this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,10)));
@@ -108,11 +160,21 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         // artifactButton.rect.height = 28;
 
         //gui,stage,parent,action,isActive,onHover,buttonSpriteName,backColor,frontColor,autoSetProgress  	infoButton.container.addChild(new gui_ContainerHolder(infoButton.container,stage,new PIXI.Sprite(Resources.getTexture(textureName))));
-        this.progress += 0.05;
-        this.progress = Math.min(this.progress, 1);
+        
         let _this = this;
-        let col = ((255 - Math.round(this.progress * 255)) << 16) +
-            ((Math.round(this.progress * 255)) << 8);
+        let col;
+        let isUnique = artifact.isUnique;
+        let progress = artifact.data.amount / ARTIFACT_TIERS[artifact.tier+1].amountNeeded;
+        let isMaxTier = ARTIFACT_TIERS[artifact.tier+1].amountNeeded == Infinity;
+
+        if(isUnique){
+            col = 0xFFAE42;
+        } else if(isMaxTier){
+            col = 0xFF55FF;
+        } else {
+            col = ((255 - Math.round(progress * 255)) << 16) +
+            ((Math.round(progress * 255)) << 8);
+        }
 
         let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{}, ()=>{return true},
         ()=>{
@@ -120,10 +182,17 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
                 artifact.displayName + "\n\n" +
                 `${ARTIFACT_TIERS[artifact.tier].tier}\n${artifact.data.amount} / ${ARTIFACT_TIERS[artifact.tier+1].amountNeeded} left for upgrade\n` +
                 artifact.getDescription() + "\n" +
-                artifact.getCurrentEffectText()
+                artifact.getCurrentEffectText(),
+                null,
+                null,
+                isUnique ? [{ texture : Resources.getTexture("spr_uniquebuilding"), text : " "}] : []
             )
-        }, "spr_button", 10526880, col, ()=>{return _this.progress}
-        );
+        }, "spr_button", 10526880, col, ()=>{
+            let isMaxTier = ARTIFACT_TIERS[artifact.tier+1].amountNeeded == Infinity;
+            if(isMaxTier || isUnique)
+                return 1;
+            return artifact.data.amount / ARTIFACT_TIERS[artifact.tier+1].amountNeeded;
+        });
         upgradeProgressBar.padding = { left : 2, right : 3, top : 2, bottom : 1}
         upgradeProgressBar.container.addChild(new gui_ContainerHolder(upgradeProgressBar.container,this.city.gui.innerWindowStage,new PIXI.Sprite(texture), { left : 0, right : 0, top : 0, bottom : 0}));
         this.city.gui.windowInner.addChild(upgradeProgressBar);
@@ -136,11 +205,29 @@ function(queue){
 function(queue){
 
 });
-
+//43129
 ARTIFACTS.registerArtifact("artifacts_base", "bonus_happiness", "Bonus Happiness", "spr_pixl_artifact_unknown",(a)=>{
     return "Adds 0.01 happiness per piece! Grants a bonus 0.5 happiness per tier above common!"
 }, (a)=>{
     return "Currently adding " + (Math.floor((a.data.amount * 0.01 + a.tier * 0.5)*100)/100) + " bonus happiness!";
+}, (a, amt, f)=>{}, false);
+
+ARTIFACTS.registerArtifact("artifacts_base", "cheaper_buildings", "Cheaper Buildings", "spr_pixl_artifact_unknown",(a)=>{
+    return "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)"
+}, (a)=>{
+    return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
+}, (a, amt, f)=>{}, false);
+
+ARTIFACTS.registerArtifact("artifacts_base", "cheaper_upgrades", "Cheaper Upgrades", "spr_pixl_artifact_unknown",(a)=>{
+    return "Reduces the cost of building upgrades by 0.05% per piece! (Max 50% discount)"
+}, (a)=>{
+    return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
+}, (a, amt, f)=>{}, false);
+
+ARTIFACTS.registerArtifact("artifacts_base", "faster_factories", "Faster Factories", "spr_pixl_artifact_unknown",(a)=>{
+    return "Speeds up your factories by 0.001x per piece! (Max 2x speed)"
+}, (a)=>{
+    return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
 }, (a, amt, f)=>{}, false);
 
 ARTIFACTS.registerArtifact("artifacts_base", "supercomputer_output", "Supercomputer Output", "spr_pixl_artifact_unknown",(a)=>{
@@ -161,23 +248,17 @@ ARTIFACTS.registerArtifact("artifacts_base", "rocket_fuel_cost", "Rocket Fuel Co
     return "";
 }, (a, amt, f)=>{}, true);
 
-ARTIFACTS.registerArtifact("artifacts_base", "cheaper_buildings", "Cheaper Buildings", "spr_pixl_artifact_unknown",(a)=>{
-    return "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)"
+ARTIFACTS.registerArtifact("artifacts_base", "extra_housing", "Bigger Houses", "spr_pixl_artifact_unknown",(a)=>{
+    return "Adds one capacity to every house!"
 }, (a)=>{
-    return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
-}, (a, amt, f)=>{}, false);
+    return "";
+}, (a, amt, f)=>{}, true);
 
-ARTIFACTS.registerArtifact("artifacts_base", "cheaper_upgrades", "Cheaper Upgrades", "spr_pixl_artifact_unknown",(a)=>{
-    return "Reduces the cost of building upgrades by 0.05% per piece! (Max 50% discount)"
+ARTIFACTS.registerArtifact("artifacts_base", "bonus_housing_quality", "Fancier Houses", "spr_pixl_artifact_unknown",(a)=>{
+    return "Adds 10 housing quality to every house! (Still capped at 100 quality)"
 }, (a)=>{
-    return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
-}, (a, amt, f)=>{}, false);
-
-ARTIFACTS.registerArtifact("artifacts_base", "faster_factories", "Faster Factories", "spr_pixl_artifact_unknown",(a)=>{
-    return "Speeds up your factories by 0.001x per piece! (Max 2x speed)"
-}, (a)=>{
-    return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
-}, (a, amt, f)=>{}, false);
+    return "";
+}, (a, amt, f)=>{}, true);
 
 let HAS_UPDATED_ARTIFACTS = true;
 
@@ -197,14 +278,16 @@ function(city, queue, version){
         if(ARTIFACTS.a[k])
             ARTIFACTS.a[k].data = v;
     }
-    console.log(JSON.stringify(ARTIFACTS.a));
+    ARTIFACTS.updateTiers();
+    // console.log(JSON.stringify(ARTIFACTS.a));
 }, 0);
 
 // for brand new worlds
 ModTools.onCityCreate(function(city){
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
-        ARTIFACTS.a[k].data = DEFAULT_ARTIFACT;
+        ARTIFACTS.a[k].data = JSON.parse(JSON.stringify(DEFAULT_ARTIFACT));
     }
+    ARTIFACTS.updateTiers();
 });
 
 (function(orig) {
@@ -268,3 +351,31 @@ ModTools.onCityCreate(function(city){
         return orig.call(this, timeMod*mult);
     }
 } (buildings_MaterialConvertingFactory.prototype.possiblyBeActive));
+
+(function(orig) {
+    buildings_House.prototype.get_residentCapacity = function() {
+        return orig.call(this) + ARTIFACTS.a["artifacts_base::extra_housing"].data.amount;
+    }
+} (buildings_House.prototype.get_residentCapacity));
+
+(function(orig) {
+    buildings_WorkWithHome.prototype.get_residentCapacity = function() {
+        return orig.call(this) + ARTIFACTS.a["artifacts_base::extra_housing"].data.amount;
+    }
+} (buildings_WorkWithHome.prototype.get_residentCapacity));
+
+(function(orig) {
+    buildings_RedwoodTreeHouse.prototype.get_residentCapacity = function() {
+        return orig.call(this) + ARTIFACTS.a["artifacts_base::extra_housing"].data.amount;
+    }
+} (buildings_RedwoodTreeHouse.prototype.get_residentCapacity));
+
+(function(orig) {
+    Permanent.prototype.get_attractiveness = function() {
+        return orig.call(this) + ARTIFACTS.a["artifacts_base::bonus_housing_quality"].data.amount * 10;
+    }
+} (Permanent.prototype.get_attractiveness));
+
+// buildings_House, buildings_WorkWithHome, buildings_RedwoodTreeHouse
+// .prototype.get_residentCapacity
+

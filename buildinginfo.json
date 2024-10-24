@@ -12,6 +12,7 @@
         "graphene": 0,
         "knowledge": 0,
         "category": "Unique Buildings",
-        "specialInfo": ["unique"]
+        "specialInfo": ["unique"],
+        "unlockedByDefault": true
     }
 ]
