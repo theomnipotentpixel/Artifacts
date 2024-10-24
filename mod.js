@@ -136,19 +136,34 @@ ARTIFACTS.setArtifactAmount = function(id, amount){
 ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
     __constructor__: function(game, stage, bgStage, city, world, position, worldPosition, id){
         superClass.call(this, game, stage, bgStage, city, world, position, worldPosition, id);
+        this.maxArtifactsPerRow = 8;
     },
     addWindowInfoLines: function(){
         superClass.prototype.addWindowInfoLines.call(this);
-        ARTIFACTS.discoverArtifacts(5, 5, true);
+        // ARTIFACTS.discoverArtifacts(5, 5, true);
         // console.log(ARTIFACTS)
+        let row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
+        let i = -1;
         for(const [id, artifact] of Object.entries(ARTIFACTS.a)){
-            this.addArtifactDisplay(artifact);
+            i++;
+            if(i == this.maxArtifactsPerRow){
+                i = 0;
+                this.city.gui.windowInner.addChild(row);
+                row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
+                this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,5)));
+            }
+
+            let artifactDisp = this.addArtifactDisplay(artifact);
+            row.addChild(artifactDisp);
+            row.addChild(new gui_GUISpacing(row, new common_Point(2,10)));
         }
+        this.city.gui.windowInner.addChild(row);
         this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,10)));
     },
     addArtifactDisplay: function(artifact){
         // let container = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner)
-
+        if(artifact.data.amount == 0)
+            return;
         let texture = Resources.getTexture(artifact.spr)
         if (!texture.valid) texture = Resources.getTexture("spr_pixl_artifact_unknown")
         // let artifactButton = this.city.gui.windowAddSimpleButton(texture, () => {
@@ -180,7 +195,7 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         ()=>{
             _this.city.gui.tooltip.setText(this.city.gui.windowInner, 
                 artifact.displayName + "\n\n" +
-                `${ARTIFACT_TIERS[artifact.tier].tier}\n${artifact.data.amount} / ${ARTIFACT_TIERS[artifact.tier+1].amountNeeded} left for upgrade\n` +
+                (isUnique ? "Unique\n" : `${ARTIFACT_TIERS[artifact.tier].tier}\n`) + (isUnique ? `` : `${artifact.data.amount} / ${ARTIFACT_TIERS[artifact.tier+1].amountNeeded} left for upgrade\n`) +
                 artifact.getDescription() + "\n" +
                 artifact.getCurrentEffectText(),
                 null,
@@ -195,7 +210,7 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         });
         upgradeProgressBar.padding = { left : 2, right : 3, top : 2, bottom : 1}
         upgradeProgressBar.container.addChild(new gui_ContainerHolder(upgradeProgressBar.container,this.city.gui.innerWindowStage,new PIXI.Sprite(texture), { left : 0, right : 0, top : 0, bottom : 0}));
-        this.city.gui.windowInner.addChild(upgradeProgressBar);
+        return upgradeProgressBar;
         
     }
 }}, "spr_artifact_storage",
