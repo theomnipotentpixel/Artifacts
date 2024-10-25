@@ -281,7 +281,7 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
             return artifact.data.amount / ARTIFACT_TIERS[artifact.tier+1].amountNeeded;
         });
         upgradeProgressBar.padding = { left : 2, right : 3, top : 2, bottom : 1}
-        upgradeProgressBar.container.addChild(new gui_ContainerHolder(upgradeProgressBar.container,this.city.gui.innerWindowStage,new PIXI.Sprite(texture), { left : 0, right : 0, top : 0, bottom : 0}));
+        upgradeProgressBar.container.addChild(new gui_ContainerHolder(upgradeProgressBar.container,this.city.gui.innerWindowStage,new PIXI.Sprite(texture), { left : 2, right : 2, top : 2, bottom : 2}));
         return upgradeProgressBar;
         
     }
@@ -293,31 +293,41 @@ function(queue){
 
 });
 
-ARTIFACTS.registerArtifact("artifacts_base", "bonus_happiness", "Bonus Happiness", "spr_pixl_artifact_unknown",(a)=>{
+ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
+
+}}, "spr_artifact_hunters",
+function(queue){
+
+},
+function(queue){
+
+});
+
+ARTIFACTS.registerArtifact("artifacts_base", "bonus_happiness", "Bonus Happiness", "spr_pixl_artifact_bonus_happiness",(a)=>{
     return "Adds 0.01 happiness per piece! Grants a bonus 0.5 happiness per tier above common!"
 }, (a)=>{
     return "Currently adding " + (Math.floor((a.data.amount * 0.01 + a.tier * 0.5)*100)/100) + " bonus happiness!";
 }, (a, amt, f)=>{}, false);
 
-ARTIFACTS.registerArtifact("artifacts_base", "cheaper_buildings", "Cheaper Buildings", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "cheaper_buildings", "Cheaper Buildings", "spr_pixl_artifact_cheaper_building",(a)=>{
     return "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)"
 }, (a)=>{
     return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
 }, (a, amt, f)=>{}, false);
 
-ARTIFACTS.registerArtifact("artifacts_base", "cheaper_upgrades", "Cheaper Upgrades", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "cheaper_upgrades", "Cheaper Upgrades", "spr_pixl_artifact_cheaper_upgrades",(a)=>{
     return "Reduces the cost of building upgrades by 0.05% per piece! (Max 50% discount)"
 }, (a)=>{
     return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
 }, (a, amt, f)=>{}, false);
 
-ARTIFACTS.registerArtifact("artifacts_base", "faster_factories", "Faster Factories", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "faster_factories", "Faster Factories", "spr_pixl_artifact_faster_factories",(a)=>{
     return "Speeds up your factories by 0.001x per piece! (Max 2x speed)"
 }, (a)=>{
     return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
 }, (a, amt, f)=>{}, false);
 
-ARTIFACTS.registerArtifact("artifacts_base", "artifact_discovery_mult", "Higher Artifact Discovery Chance", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "artifact_discovery_mult", "Higher Artifact Discovery Chance", "spr_pixl_artifact_higher_artifact_chance",(a)=>{
     return "Increase your artifact discovery chance by 0.1% per piece!"
 }, (a)=>{
     return `Current boost: +${(a.data.amt * 0.001).toFixed(2)}%`;
@@ -325,31 +335,31 @@ ARTIFACTS.registerArtifact("artifacts_base", "artifact_discovery_mult", "Higher 
     ARTIFACTS.discoveryMultipliers = amt * 0.001 + 1;
 }, false);
 
-ARTIFACTS.registerArtifact("artifacts_base", "supercomputer_output", "Supercomputer Output", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "supercomputer_output", "Supercomputer Output", "spr_pixl_artifact_double_supercomputer",(a)=>{
     return "Doubles the output of the supercomputer!"
 }, (a)=>{
     return "";
 }, (a, amt, f)=>{}, true);
 
-ARTIFACTS.registerArtifact("artifacts_base", "machine_output", "Machine Output", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "machine_output", "Machine Output", "spr_pixl_artifact_double_machine",(a)=>{
     return "Doubles the output of the machine!"
 }, (a)=>{
     return "";
 }, (a, amt, f)=>{}, true);
 
-ARTIFACTS.registerArtifact("artifacts_base", "rocket_fuel_cost", "Rocket Fuel Cost", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "rocket_fuel_cost", "Rocket Fuel Cost", "spr_pixl_artifact_cheaper_rocket_fuel",(a)=>{
     return "Halves the fuel cost of rocket missions!"
 }, (a)=>{
     return "";
 }, (a, amt, f)=>{}, true);
 
-ARTIFACTS.registerArtifact("artifacts_base", "extra_housing", "Bigger Houses", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "extra_housing", "Bigger Houses", "spr_pixl_artifact_bigger_houses",(a)=>{
     return "Adds one capacity to every house!"
 }, (a)=>{
     return "";
 }, (a, amt, f)=>{}, true);
 
-ARTIFACTS.registerArtifact("artifacts_base", "bonus_housing_quality", "Fancier Houses", "spr_pixl_artifact_unknown",(a)=>{
+ARTIFACTS.registerArtifact("artifacts_base", "bonus_housing_quality", "Fancier Houses", "spr_pixl_artifact_better_houses",(a)=>{
     return "Adds 10 housing quality to every house!"
 }, (a)=>{
     return "";

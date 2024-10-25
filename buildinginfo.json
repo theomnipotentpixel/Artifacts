@@ -14,5 +14,21 @@
         "category": "Unique Buildings",
         "specialInfo": ["unique"],
         "unlockedByDefault": true
+    },
+    {
+        "className": "pixl_ArtifactHunters",
+        "name": "The Artifact Hunters",
+        "description": "An underground collective of cizitens dedicated to uncovering mysterious objects...",
+        "food": 0,
+        "wood": 0,
+        "stone": 0,
+        "machineParts": 0,
+        "refinedMetal": 0,
+        "computerChips": 0,
+        "graphene": 0,
+        "knowledge": 0,
+        "category": "Unique Buildings",
+        "specialInfo": ["unique"],
+        "unlockedByDefault": true
     }
 ]
