@@ -1,19 +1,58 @@
-let ARTIFACTS = {a:{}};
-let DEFAULT_ARTIFACT = {
-    amount: 0,
-    discoveredPrior: false
-};
-let ARTIFACT_TIERS = [
-    {tier:"Common", amountNeeded: 1},
-    {tier:"Uncommon", amountNeeded: 20},
-    {tier:"Rare", amountNeeded: 50},
-    {tier:"Epic", amountNeeded: 250},
-    {tier:"Legendary", amountNeeded: 1000},
-    {tier:"Mythic", amountNeeded: 10000},
-    {tier:"_", amountNeeded: Infinity},
-]
-let A_M = {};
+let dontInit = false;
+let dontInitTiers = false;
+// in case anyone wants to override things
+if(typeof ARTIFACTS_SHOULD_NOT_INIT !== 'undefined') {
+    // if this runs, it means another mod is overriding some of the default mod behavior
+    dontInit = ARTIFACTS_SHOULD_NOT_INIT;
+}
+if(typeof ARTIFACTS_SHOULD_NOT_INIT_TIERS !== 'undefined') {
+    // if this runs, it means another mod is overriding some of the default mod behavior
+    dontInitTiers = ARTIFACTS_SHOULD_NOT_INIT_TIERS;
+}
+if(!dontInit)
+    var ARTIFACTS = {a:{}};
 
+if(!ARTIFACTS.DEFAULTS)
+    ARTIFACTS.DEFAULTS = {};
+
+if(!ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT){
+    ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT = {
+        amount: 0,
+        discoveredPrior: false
+    };
+}
+
+if(!dontInitTiers){
+    var ARTIFACT_TIERS = [
+        {tier:"Common", amountNeeded: 1},
+        {tier:"Uncommon", amountNeeded: 20},
+        {tier:"Rare", amountNeeded: 50},
+        {tier:"Epic", amountNeeded: 250},
+        {tier:"Legendary", amountNeeded: 1000},
+        {tier:"Mythic", amountNeeded: 10000},
+        {tier:"_", amountNeeded: Infinity},
+    ];
+}
+
+if(!ARTIFACTS.discovery_audios)
+    ARTIFACTS.discovery_audios = {};
+
+if(!ARTIFACTS.modPath)
+    ARTIFACTS.modPath = _internalModHelpers.path + "\\" + Liquid.getModID();
+
+// Audio.get().playSound(Audio.get().buttonSound);
+
+if(!ARTIFACTS.DEFAULTS.firstDiscoveryAudio){
+    ARTIFACTS.DEFAULTS.noFirstDiscoveryAudio = PIXI.sound.Sound.from({ url : `${ARTIFACTS.modPath}\\sounds\\artifacts_no_first_discovery.mp3`, preload : true});
+    ARTIFACTS.DEFAULTS.defaultFirstDiscoveryAudio = PIXI.sound.Sound.from({ url : `${ARTIFACTS.modPath}\\sounds\\artifacts_default_first_discovery.wav`, preload : true});
+}
+
+if(!ARTIFACTS.discoveryMultipliers)
+    ARTIFACTS.discoveryMultipliers = {
+        artifacts_base: 1
+    };
+
+if(!ARTIFACTS.getAllIds)
 ARTIFACTS.getAllIds = function(includeUniques, includeMaxed){
     if(includeUniques == null)
         includeUniques = true;
@@ -30,10 +69,8 @@ ARTIFACTS.getAllIds = function(includeUniques, includeMaxed){
     return ids;
 }
 
-ARTIFACTS.discoveryMultipliers = {
-    artifacts_base: 1
-};
 
+if(!ARTIFACTS.getDiscoveryMultiplier)
 ARTIFACTS.getDiscoveryMultiplier = function(){
     let mult = 1;
     for (const [k, v] of Object.entries(ARTIFACTS.discoveryMultipliers)) {
@@ -43,6 +80,7 @@ ARTIFACTS.getDiscoveryMultiplier = function(){
 }
 
 // generates n random artifacts where min and max are both inclusive
+if(!ARTIFACTS.discoverArtifacts)
 ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques){
     if(allowUniques == null)
         allowUniques = false;
@@ -63,6 +101,7 @@ ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques){
     }
 }
 
+if(!ARTIFACTS.updateTiers)
 ARTIFACTS.updateTiers = function(){
     let allArtifacts = ARTIFACTS.getAllIds();
     for(let id of allArtifacts){
@@ -76,7 +115,13 @@ ARTIFACTS.updateTiers = function(){
 }
 
 //                                   string,   string,     string,                string,         function(thisArtifact), function(thisArtifact), function(thisArtifact, newAmount, isFirst), bool
-ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange, isUnique){
+if(!ARTIFACTS.registerArtifact)
+ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange, isUnique, overrides){
+    if(overrides == null)
+        overrides = {};
+    if(overrides.onDiscoverySound == false)
+        overrides.onDiscoverySound = ARTIFACTS.DEFAULTS.noFirstDiscoveryAudio;
+    
     ARTIFACTS.a[modName + "::" + artifactName] = {
         id: modName + "::" + artifactName,
         displayName: artifactDisplayName,
@@ -84,24 +129,30 @@ ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName
         currentEffect: artifactCurrentEffectText,
         onChange: onAmountChange,
         spr: artifactSprite,
-        data: DEFAULT_ARTIFACT,
+        data: ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT,
         tier: 0,
-        isUnique: isUnique
+        isUnique: isUnique,
+        overrides: overrides == null ? {} : overrides
     }
     ARTIFACTS.a[modName + "::" + artifactName].getDescription = function(){return ARTIFACTS.a[modName + "::" + artifactName].description(ARTIFACTS.a[modName + "::" + artifactName])}
     ARTIFACTS.a[modName + "::" + artifactName].getCurrentEffectText = function(){return ARTIFACTS.a[modName + "::" + artifactName].currentEffect(ARTIFACTS.a[modName + "::" + artifactName])}
 }
 
+if(!ARTIFACTS.gainOrLoseArtifactAmount)
 ARTIFACTS.gainOrLoseArtifactAmount = function(id, amount){
     amount = Math.trunc(amount);
     if(amount == 0)
         return;
-    console.log(id, amount);
     if(ARTIFACTS.a[id]){
         let isFirst = false;
         if(amount > 0 && !ARTIFACTS.a[id].data.discoveredPrior){
             isFirst = true;
             ARTIFACTS.a[id].data.discoveredPrior = true;
+
+            if(ARTIFACTS.a[id].overrides.onDiscoverySound)
+                Audio.get().playSound(ARTIFACTS.a[id].overrides.onDiscoverySound);
+            else
+                Audio.get().playSound(ARTIFACTS.DEFAULTS.defaultFirstDiscoveryAudio);
         }
         ARTIFACTS.a[id].data.amount += amount;
         if(ARTIFACTS.a[id].data.amount < 0)
@@ -122,6 +173,7 @@ ARTIFACTS.gainOrLoseArtifactAmount = function(id, amount){
     }
 }
 
+if(!ARTIFACTS.setArtifactAmount)
 ARTIFACTS.setArtifactAmount = function(id, amount){
     amount = Math.max(Math.trunc(amount), 0);
     if(ARTIFACTS.a[id]){
@@ -129,6 +181,11 @@ ARTIFACTS.setArtifactAmount = function(id, amount){
         if(amount > 0 && !ARTIFACTS.a[id].data.discoveredPrior){
             isFirst = true;
             ARTIFACTS.a[id].data.discoveredPrior = true;
+
+            if(ARTIFACTS.a[id].overrides.onDiscoverySound)
+                Audio.get().playSound(ARTIFACTS.a[id].overrides.onDiscoverySound);
+            else
+                Audio.get().playSound(ARTIFACTS.DEFAULTS.defaultFirstDiscoveryAudio);
         }
         ARTIFACTS.a[id].data.amount = amount;
 
@@ -152,12 +209,14 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
     },
     addWindowInfoLines: function(){
         superClass.prototype.addWindowInfoLines.call(this);
-        // ARTIFACTS.discoverArtifacts(5, 5, true);
+        ARTIFACTS.discoverArtifacts(10, 10, true);
         // console.log(ARTIFACTS)
         let row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
         let i = -1;
         for(const [id, artifact] of Object.entries(ARTIFACTS.a)){
-            i++;
+            let artifactDisp = this.addArtifactDisplay(artifact);
+            if(artifactDisp)
+                i++;
             if(i == this.maxArtifactsPerRow){
                 i = 0;
                 this.city.gui.windowInner.addChild(row);
@@ -165,7 +224,6 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
                 this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,5)));
             }
 
-            let artifactDisp = this.addArtifactDisplay(artifact);
             if(artifactDisp){
                 row.addChild(artifactDisp);
                 row.addChild(new gui_GUISpacing(row, new common_Point(2,10)));
@@ -197,7 +255,7 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         let isMaxTier = ARTIFACT_TIERS[artifact.tier+1].amountNeeded == Infinity;
 
         if(isUnique){
-            col = 0xFFAE42;
+            col = 0xFAC51C;
         } else if(isMaxTier){
             col = 0xFF55FF;
         } else {
@@ -322,9 +380,13 @@ function(city, queue, version){
 // for brand new worlds
 ModTools.onCityCreate(function(city){
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
-        ARTIFACTS.a[k].data = JSON.parse(JSON.stringify(DEFAULT_ARTIFACT));
+        ARTIFACTS.a[k].data = JSON.parse(JSON.stringify(ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT));
     }
     ARTIFACTS.updateTiers();
+});
+
+ModTools.onModsLoaded(function(){
+    
 });
 
 (function(orig) {
