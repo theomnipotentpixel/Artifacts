@@ -29,6 +29,8 @@
         "knowledge": 0,
         "category": "Unique Buildings",
         "specialInfo": ["unique"],
+        "residents": 6,
+        "jobs": 6,
         "unlockedByDefault": true
     }
 ]

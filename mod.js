@@ -70,6 +70,22 @@ ARTIFACTS.getAllIds = function(includeUniques, includeMaxed){
 }
 
 
+if(!ARTIFACTS.getAllUniqueIds)
+ARTIFACTS.getAllUniqueIds = function(includeDiscovered){
+    if(includeDiscovered == null)
+        includeDiscovered = true;
+    let ids = [];
+    for (const [k, v] of Object.entries(ARTIFACTS.a)) {
+        if(!v.isUnique)
+            continue;
+        if(v.data.amount == 1 && !includeDiscovered)
+            continue;
+        ids.push(k);
+    }
+    return ids;
+}
+
+
 if(!ARTIFACTS.getDiscoveryMultiplier)
 ARTIFACTS.getDiscoveryMultiplier = function(){
     let mult = 1;
@@ -81,10 +97,14 @@ ARTIFACTS.getDiscoveryMultiplier = function(){
 
 // generates n random artifacts where min and max are both inclusive
 if(!ARTIFACTS.discoverArtifacts)
-ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques){
+ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques, pregeneratedList){
     if(allowUniques == null)
         allowUniques = false;
-    let allApplicable = ARTIFACTS.getAllIds(allowUniques, false);
+    let allApplicable;
+    if(pregeneratedList == undefined)
+        allApplicable = ARTIFACTS.getAllIds(allowUniques, false);
+    else
+        allApplicable = pregeneratedList;
     let generatedArtifacts = {};
     let amountToGenerate = random_Random.getInt(amountMin, amountMax+1);
 
@@ -99,6 +119,7 @@ ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques){
     for (const [k, v] of Object.entries(generatedArtifacts)) {
         ARTIFACTS.gainOrLoseArtifactAmount(k, v);
     }
+    return generatedArtifacts;
 }
 
 if(!ARTIFACTS.updateTiers)
@@ -294,7 +315,44 @@ function(queue){
 });
 
 ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
-
+    addWindowInfoLines: function() {
+		var _gthis = this;
+		buildings_WorkWithHome.prototype.addWindowInfoLines.call(this);
+		this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.window,new common_Point(4,4)));
+		var anySQ = false;
+		if(this.currentMission == 8) {
+			anySQ = gui_CurrentMissionsWindow.displaySidequestsWithTag(this.city,this.city.gui,this.city.gui.innerWindowStage,this.city.gui.windowInner,"ArtifactHunters");
+		}
+		if(!this.isScenarioVariant && !anySQ) {
+			this.city.gui.windowAddInfoText(null,function() {
+				return _gthis.missionGetTitle();
+			},"Arial15");
+			this.city.gui.windowAddInfoText(null,function() {
+				return _gthis.missionGetText();
+			});
+		}
+	},
+    missionGetTitle: function() {
+		if(this.currentMission == 8) {
+			return "Thank You";
+		}
+		return "Current Task";
+	}
+	,missionGetText: function() {
+		if(this.currentMission >= 8) {
+			return "We will be forever grateful.";
+		}
+		if(this.workers.length != this.get_jobs()) {
+			return "We need more hunters!\nMake sure all 8 jobs are filled";
+		}
+		return common_Localize.lo("secret_society_mission_" + this.currentMission);
+	},
+    checkMissionCompletions: function() {
+        
+    },
+    update: function(timeMod){
+		superClass.prototype.update.call(this,timeMod);
+    }
 }}, "spr_artifact_hunters",
 function(queue){
 
@@ -378,7 +436,7 @@ function(city, queue, version){
 },
 function(city, queue, version){
     let t = JSON.parse(queue.readString());
-    console.log(t);
+    // console.log(t);
     for (const [k, v] of Object.entries(t)) {
         if(ARTIFACTS.a[k])
             ARTIFACTS.a[k].data = v;
@@ -481,3 +539,19 @@ ModTools.onModsLoaded(function(){
         return orig.call(this) + ARTIFACTS.a["artifacts_base::bonus_housing_quality"].data.amount * 10;
     }
 } (Permanent.prototype.get_attractiveness));
+
+
+
+(function(orig) {
+    worldResources_AlienRuins.prototype.awardAnyBonuses = function() {
+        let tmp = this.bonusesAwarded;
+        orig.call(this);
+        if(tmp != this.bonusesAwarded){
+            if(tmp == 0 || tmp == 2){
+                let a = ARTIFACTS.getAllUniqueIds(false);
+                if(a.length)
+                    ARTIFACTS.discoverArtifacts(1, 1, null, a)
+            }
+        }
+    }
+} (worldResources_AlienRuins.prototype.awardAnyBonuses));
