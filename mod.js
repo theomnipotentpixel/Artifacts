@@ -1,5 +1,6 @@
 let dontInit = false;
 let dontInitTiers = false;
+let ARE_ARTIFACT_CHEATS_ENABLED = true;
 // in case anyone wants to override things
 if(typeof ARTIFACTS_SHOULD_NOT_INIT !== 'undefined') {
     // if this runs, it means another mod is overriding some of the default mod behavior
@@ -62,7 +63,7 @@ ARTIFACTS.getAllIds = function(includeUniques, includeMaxed){
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
         if(!includeUniques && v.isUnique)
             continue;
-        if((ARTIFACT_TIERS[v.tier+1].amountNeeded == Infinity && !includeMaxed) || (v.isUnique && v.data.amount == 1))
+        if((ARTIFACT_TIERS[v.tier+1].amountNeeded == Infinity && !includeMaxed) || (v.isUnique && v.data.amount == 1 && !includeMaxed))
             continue;
         ids.push(k);
     }
@@ -107,7 +108,10 @@ ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques, prege
         allApplicable = pregeneratedList;
     let generatedArtifacts = {};
     let amountToGenerate = random_Random.getInt(amountMin, amountMax+1);
-
+    if(allApplicable.length == 0){
+        console.warn("WARN: Attempted do discover artifacts, but no applicable artifacts were found! (ARTIFACTS.discoverArtifacts)");
+        return {};
+    }
     for(let i = 0; i < amountToGenerate; i++){
         let artifact = random_Random.fromArray(allApplicable);
         if(generatedArtifacts[artifact] == null)
@@ -150,7 +154,7 @@ ARTIFACTS.registerArtifact = function(modName, artifactName, artifactDisplayName
         currentEffect: artifactCurrentEffectText,
         onChange: onAmountChange,
         spr: artifactSprite,
-        data: ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT,
+        data: JSON.parse(JSON.stringify(ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT)),
         tier: 0,
         isUnique: isUnique,
         overrides: overrides == null ? {} : overrides
@@ -227,11 +231,24 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
     __constructor__: function(game, stage, bgStage, city, world, position, worldPosition, id){
         superClass.call(this, game, stage, bgStage, city, world, position, worldPosition, id);
         this.maxArtifactsPerRow = 8;
+        this.ownerBuilding = "pixl_ArtifactHunters";
+    },
+    getNOwnerBuildings: function(){
+        let blds = this.city.getAmountOfPermanentsPerType();
+        let nOwnerBuilding = Object.prototype.hasOwnProperty.call(blds.h,"buildings."+this.ownerBuilding) ? 
+            blds.h["buildings."+this.ownerBuilding] : 0;
+        return nOwnerBuilding;
     },
     addWindowInfoLines: function(){
         superClass.prototype.addWindowInfoLines.call(this);
-        ARTIFACTS.discoverArtifacts(10, 10, true);
-        // console.log(ARTIFACTS)
+        // ARTIFACTS.discoverArtifacts(10, 10, true);
+        // let _this = this;
+        if(this.getNOwnerBuildings() == 0){
+            this.city.gui.windowAddInfoText(null,function() {
+                return "Build the Artifact Hunters HQ to unlock!";
+            });
+            return;
+        }
         let row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
         let i = -1;
         for(const [id, artifact] of Object.entries(ARTIFACTS.a)){
@@ -590,3 +607,30 @@ ModTools.onModsLoaded(function(){
         }
     }
 } (simulation_RocketMission.prototype.giveMissionReward));
+
+// Liquid.addGeneralStatsButton(onClick(city), text(city), spriteName, position, isActive(city)?, onHover(city)?, keybind?)
+if(ARE_ARTIFACT_CHEATS_ENABLED){
+    Liquid.addGeneralStatsButton((city)=>{
+        let shouldUnique = city.game.keyboard.down[16];
+        let nArtifacts = city.game.keyboard.down[17] ? 5 : 1;
+        if(!shouldUnique){
+            ARTIFACTS.discoverArtifacts(nArtifacts, nArtifacts, false);
+        } else {
+            ARTIFACTS.discoverArtifacts(nArtifacts, nArtifacts, null, ARTIFACTS.getAllUniqueIds(false));
+        }
+    }, (city)=>{
+        return "Gen Artifacts";
+    }, "", -1, null, (city)=>{
+        city.gui.tooltip.setText(city.gui.windowInner, "Shift+Click for a unique, Ctrl+Click for 5 at a time");
+    });
+
+    Liquid.addGeneralStatsButton((city)=>{
+        let allArtifacts = ARTIFACTS.getAllIds();
+        for(let id of allArtifacts){
+            ARTIFACTS.setArtifactAmount(id, 0);
+            ARTIFACTS.a[id].data.discoveredPrior = false;
+        }
+    }, (city)=>{
+        return "Clear Artifacts";
+    }, "", -1);
+}
