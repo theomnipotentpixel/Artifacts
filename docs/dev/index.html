@@ -1,27 +1,2 @@
-<pre><code class="language-js">
-ARTIFACTS.getAllIds(includeUniques=true, includeMaxed=true); // a &quot;maxed&quot; artifact is one that has no more tiers to complete
-
-ARTIFACTS.discoveryMultipliers = {};
-
-ARTIFACTS.getDiscoveryMultiplier(); // returns every value in ARTIFACTS.discoveryMultipliers multiplied together
-
-ARTIFACTS.discoverArtifacts(amountMin, amountMax, allowUniques=false);
-
-ARTIFACTS.updateTiers(); // called on city load and city create, for internal use
-
-ARTIFACTS.registerArtifact(
-    modName:string, 
-    artifactName:string,
-    artifactDisplayName:string,
-    artifactSprite:string,
-    artifactDescription:function(thisArtifact)-&gt;void,
-    artifactCurrentEffectText:function(thisArtifact)-&gt;void,
-    onAmountChange:function(thisArtifact, newAmount, isFirst)-&gt;void,
-    isUnique:bool
-);
-
-ARTIFACTS.gainOrLoseArtifactAmount(id, amount);
-
-ARTIFACTS.setArtifactAmount(id, amount);
-</code></pre>
-    
+ping @pixlperfect01 on discord in Florian's Games discord server if you have questions pls<br>
+(i havent gotten around to writing docs and might not for a while)
