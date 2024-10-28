@@ -1,0 +1,2 @@
+artifacts_default_first_discovery.wav : https://freesound.org/people/andersmmg/packs/29486/
+artifact_hunters_mission_complete.mp3 : https://pixabay.com/sound-effects/marimba-bloop-2-188149/

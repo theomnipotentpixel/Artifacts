@@ -16,6 +16,9 @@ if(!dontInit)
 if(!ARTIFACTS.DEFAULTS)
     ARTIFACTS.DEFAULTS = {};
 
+if(!ARTIFACTS.CAN_DISCOVER_ARTIFACTS)
+    ARTIFACTS.CAN_DISCOVER_ARTIFACTS = false;
+
 if(!ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT){
     ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT = {
         amount: 0,
@@ -214,7 +217,7 @@ ARTIFACTS.gainOrLoseArtifactAmount = function(id, amount){
                 break;
             }
         }
-        ARTIFACTS.a[id].onChange(ARTIFACTS, ARTIFACTS.a[id], ARTIFACTS.a[id].data.amount, isFirst);
+        ARTIFACTS.a[id].onChange(ARTIFACTS.a[id], ARTIFACTS.a[id].data.amount, isFirst);
     } else {
         console.warn(`WARN: Attempted to edit artifact count of artifact "${id}", but artifact has not been registered! (ARTIFACTS.gainOrLoseArtifactAmount)`);
     }
@@ -243,7 +246,7 @@ ARTIFACTS.setArtifactAmount = function(id, amount){
             }
         }
 
-        ARTIFACTS.a[id].onChange(ARTIFACTS, ARTIFACTS.a[id], ARTIFACTS.a[id].amount, isFirst);
+        ARTIFACTS.a[id].onChange(ARTIFACTS.a[id], ARTIFACTS.a[id].amount, isFirst);
     } else {
         console.warn(`WARN: Attempted to edit artifact count of artifact "${id}", but artifact has not been registered! (ARTIFACTS.setArtifactAmount)`);
     }
@@ -254,10 +257,12 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         superClass.call(this, game, stage, bgStage, city, world, position, worldPosition, id);
         this.maxArtifactsPerRow = 8;
         this.ownerBuilding = "pixl_ArtifactHunters";
+        ARTIFACTS.CAN_DISCOVER_ARTIFACTS = true;
+    },
+    onBuild: function(){
+        ARTIFACTS.CAN_DISCOVER_ARTIFACTS = true;
     },
     getNOwnerBuildings: function(){
-        // HERE
-        return 1;
         let blds = this.city.getAmountOfPermanentsPerType();
         let nOwnerBuilding = Object.prototype.hasOwnProperty.call(blds.h,"buildings."+this.ownerBuilding) ? 
             blds.h["buildings."+this.ownerBuilding] : 0;
@@ -353,7 +358,7 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         return upgradeProgressBar;
         
     }
-}}, "spr_artifact_storage",
+}}, "spr_artifact_gallery",
 function(queue){
 
 },
@@ -361,7 +366,10 @@ function(queue){
 
 });
 
-ModTools.makeBuilding("CustomSociety", (superClass) => { return {
+ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
+    onBuild: function(){
+        this.city.progress.unlocks.unlock(buildings_pixl_ArtifactGallery);
+    },
 	addWindowInfoLines: function() {
 		var _gthis = this;
 		buildings_WorkWithHome.prototype.addWindowInfoLines.call(this);
@@ -393,9 +401,10 @@ ModTools.makeBuilding("CustomSociety", (superClass) => { return {
 			return common_Localize.lo("forever_grateful");
 		}
 		if(this.workers.length != this.get_jobs()) {
-			return "We need more hunters!\nMake sure all n jobs are filled!";
+			return "We need more hunters!\nMake sure all 6 jobs are filled!";
 		}
-        return this.getMissions()[this.currentMission].missionDescription;
+        return this.getMissions()[this.currentMission].missionDescription +
+            (this.getMissions()[this.currentMission].getDescriptionExtra ? "\n"+this.getMissions()[this.currentMission].getDescriptionExtra(this.city) : "");
 	},
     checkMissionCompletions: function(){
         if(this.currentMission >= this.getMissions().length)
@@ -404,7 +413,12 @@ ModTools.makeBuilding("CustomSociety", (superClass) => { return {
             let currentMission = this.getMissions()[this.currentMission];
             if(!currentMission.checkComplete(this.city))
                 break;
-            currentMission.onComplete();
+            if(typeof currentMission.onComplete == "function"){
+                currentMission.onComplete();
+            }
+            if(this.missionCompleteSound){
+                Audio.get().playSound(this.missionCompleteSound);
+            }
             this.currentMission++;
         }
     },
@@ -422,17 +436,134 @@ ModTools.makeBuilding("CustomSociety", (superClass) => { return {
     __constructor__: function(game,stage,bgStage,city,world,position,worldPosition,id){
         this.currentMission = 0;
         buildings_WorkWithHome.call(this,game,stage,bgStage,city,world,position,worldPosition,id);
-
+        
+        this.missionCompleteSound = buildings_pixl_ArtifactHunters.missionCompleteSound;
         this.missions = [
             {
-                missionDescription: "Build 1x basic house",
-                onComplete: ()=>{console.log("yay")},
+                missionDescription: "Build the Artifact Gallery",
                 checkComplete: (city)=>{
                     let blds = city.getAmountOfPermanentsPerType();
-                    return (Object.prototype.hasOwnProperty.call(blds.h,"buildings.NormalHouse") ? 
-                        blds.h["buildings.NormalHouse"] : 0) >= 1;
+                    return (Object.prototype.hasOwnProperty.call(blds.h,"buildings.pixl_ArtifactGallery") ? 
+                        blds.h["buildings.pixl_ArtifactGallery"] : 0) == 1;
                 }
-            }
+            },
+            {
+                missionDescription: "Discover a normal artifact in a \"Nearby Space\" rocket mission!",
+                checkComplete: (city)=>{
+                    let allIds = ARTIFACTS.getAllIds(false);
+                    for(id of allIds){
+                        if(ARTIFACTS.a[id].data.amount > 0)
+                            return true;
+                    }
+                    return false;
+                }
+            },
+            {
+                missionDescription: "Discover a unique artifact in a \"Distant Space\" rocket mission!",
+                checkComplete: (city)=>{
+                    let allIds = ARTIFACTS.getAllUniqueIds();
+                    for(id of allIds){
+                        if(ARTIFACTS.a[id].data.amount > 0)
+                            return true;
+                    }
+                    return false;
+                }
+            },
+            {
+                missionDescription: "Get an artifact to the \"Rare\" tier!",
+                checkComplete: (city)=>{
+                    let allIds = ARTIFACTS.getAllIds(false);
+                    for(id of allIds){
+                        if(ARTIFACTS.a[id].tier >= 2)
+                            return true;
+                    }
+                    return false;
+                }
+            },
+            {
+                missionDescription: "Unlock 5 Unique artifacts!",
+                checkComplete: (city)=>{
+                    let allIds = ARTIFACTS.getAllUniqueIds();
+                    let nUniques = 0;
+                    for(id of allIds){
+                        if(ARTIFACTS.a[id].data.amount == 1)
+                            nUniques++;
+                    }
+                    return nUniques >= 5;
+                },
+                getDescriptionExtra: function(city){
+                    let allIds = ARTIFACTS.getAllUniqueIds();
+                    let nUniques = 0;
+                    for(id of allIds){
+                        if(ARTIFACTS.a[id].data.amount == 1)
+                            nUniques++;
+                    }
+                    return `Progress: ${nUniques} / 5`;
+                }
+            },
+            {
+                missionDescription: "Have 500 total artifact levels!",
+                checkComplete: (city)=>{
+                    let allIds = ARTIFACTS.getAllIds();
+                    let nLevels = 0;
+                    for(id of allIds){
+                        nLevels += ARTIFACTS.a[id].data.amount
+                            
+                    }
+                    return nLevels >= 500;
+                },
+                getDescriptionExtra: function(city){
+                    let allIds = ARTIFACTS.getAllIds();
+                    let nLevels = 0;
+                    for(id of allIds){
+                        nLevels += ARTIFACTS.a[id].data.amount
+                            
+                    }
+                    return `Progress: ${nLevels} / 500`;
+                }
+            },
+            {
+                missionDescription: "Have 1000 total artifact levels!",
+                checkComplete: (city)=>{
+                    let allIds = ARTIFACTS.getAllIds();
+                    let nLevels = 0;
+                    for(id of allIds){
+                        nLevels += ARTIFACTS.a[id].data.amount
+                            
+                    }
+                    return nLevels >= 1000;
+                },
+                getDescriptionExtra: function(city){
+                    let allIds = ARTIFACTS.getAllIds();
+                    let nLevels = 0;
+                    for(id of allIds){
+                        nLevels += ARTIFACTS.a[id].data.amount
+                            
+                    }
+                    return `Progress: ${nLevels} / 1000`;
+                }
+            },
+            {
+                missionDescription: "Have 2500 total artifact levels!",
+                checkComplete: (city)=>{
+                    let allIds = ARTIFACTS.getAllIds();
+                    let nLevels = 0;
+                    for(id of allIds){
+                        nLevels += ARTIFACTS.a[id].data.amount
+                            
+                    }
+                    return nLevels >= 2500;
+                },
+                getDescriptionExtra: function(city){
+                    let allIds = ARTIFACTS.getAllIds();
+                    let nLevels = 0;
+                    for(id of allIds){
+                        nLevels += ARTIFACTS.a[id].data.amount
+                            
+                    }
+                    return `Progress: ${nLevels} / 2500`;
+                }
+            },
         ];
     }
 };}, "spr_artifact_hunters",
@@ -441,6 +572,15 @@ function(queue){
 },
 function(queue){
     this.currentMission = queue.readInt();
+});
+
+buildings_pixl_ArtifactHunters.missionCompleteSound = 
+    PIXI.sound.Sound.from({ url : `${ARTIFACTS.modPath}\\sounds\\artifact_hunters_mission_complete.mp3`, preload : true});
+
+ModTools.addBuildBasedUnlock(buildings_pixl_ArtifactHunters, function(blds) {
+    return blds.h["buildings.GrapheneLab"] >= 1;
+}, function(blds) {
+    return blds.h["buildings.RocketLaunchPlatform"] >= 1;
 });
 
 Liquid.onInfoFilesLoaded("artifactsInfo.json", function(data){
@@ -476,25 +616,6 @@ Liquid.onInfoFilesLoaded("artifactsInfo.json", function(data){
 
 // id, currentEffect, onAmountChange, dynamicDescription|null, overrides|null
 // id, function(thisArtifact), function(thisArtifact, newAmount, isFirst), function(thisArtifact), {onDiscoevrySound}
-// ARTIFACTS.registerArtifact("artifacts_base::bonus_happiness", (a)=>{
-//     return "Currently adding " + (Math.floor((a.data.amount * 0.01 + a.tier * 0.5)*100)/100) + " bonus happiness!";
-// });
-
-// ARTIFACTS.registerArtifact("artifacts_base::cheaper_buildings", (a)=>{
-//     return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
-// });
-
-// ARTIFACTS.registerArtifact("artifacts_base::cheaper_upgrades", (a)=>{
-//     return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
-// });
-
-// ARTIFACTS.registerArtifact("artifacts_base::faster_factories", (a)=>{
-//     return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
-// });
-
-// ARTIFACTS.registerArtifact("artifacts_base::artifact_discovery_mult", (a)=>{
-//     return `Current boost: +${(a.data.amount * 0.001).toFixed(2)}%`;
-// });
 
 
 
@@ -515,9 +636,9 @@ ARTIFACTS.registerArtifact("artifacts_base::faster_factories", (a)=>{
 });
 
 ARTIFACTS.registerArtifact("artifacts_base::artifact_discovery_mult", (a)=>{
-    return `Current boost: +${(a.data.amount * 0.001).toFixed(2)}%`;
+    return `Current boost: +${(a.data.amount * 0.01).toFixed(2)}x`;
 }, (a, amt, f)=>{
-    ARTIFACTS.discoveryMultipliers.artifacts_base = amt * 0.001 + 1;
+    ARTIFACTS.discoveryMultipliers.artifacts_base = a.data.amount * 0.01 + 1;
 });
 
 ARTIFACTS.registerArtifact("artifacts_base::supercomputer_output", "");
@@ -645,7 +766,7 @@ ModTools.onModsLoaded(function(){
         orig.call(this);
         if(dest != 0 && dest != 1)
             return;
-        if(dest == 0){
+        if(dest == 0 && ARTIFACTS.CAN_DISCOVER_ARTIFACTS){
             let possibleArtifacts = ARTIFACTS.getAllIds(false, false);
             if(possibleArtifacts == [])
                 return;
@@ -653,12 +774,15 @@ ModTools.onModsLoaded(function(){
                 this.missionCompletionText = "";
             }
             this.missionCompletionText += "You found some artifacts!";
-            let discoveredArtifacts = ARTIFACTS.discoverArtifacts(5*(dest*2+1), 15*(dest*2+1), false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
+            let discoveredArtifacts = ARTIFACTS.discoverArtifacts(
+                Math.ceil(5*ARTIFACTS.getDiscoveryMultiplier()),
+                Math.ceil(15*ARTIFACTS.getDiscoveryMultiplier()),
+                false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
             for (const [k, v] of Object.entries(discoveredArtifacts)) {
                 this.missionCompletionText += "\n" + ARTIFACTS.a[k].displayName + ": " + v;
             }
         }
-        if(dest == 1){
+        if(dest == 1 && ARTIFACTS.CAN_DISCOVER_ARTIFACTS){
             let possibleArtifacts = ARTIFACTS.getAllUniqueIds(false);
             if(possibleArtifacts == [])
                 return;
