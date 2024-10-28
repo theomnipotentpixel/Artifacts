@@ -1,0 +1,72 @@
+[
+    {
+        "id": "artifacts_base::bonus_happiness",
+        "displayName": "Bonus Happiness",
+        "image": "spr_pixl_artifact_bonus_happiness",
+        "isUnique": false,
+        "description": "Adds 0.01 happiness per piece! Grants a bonus 0.5 happiness per tier above common!"
+    },
+    {
+        "id": "artifacts_base::cheaper_buildings",
+        "displayName": "Cheaper Buildings",
+        "image": "spr_pixl_artifact_cheaper_building",
+        "isUnique": false,
+        "description": "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)"
+    },
+    {
+        "id": "artifacts_base::cheaper_upgrades",
+        "displayName": "Cheaper Upgrades",
+        "image": "spr_pixl_artifact_cheaper_upgrades",
+        "isUnique": false,
+        "description": "Reduces the cost of building upgrades by 0.05% per piece! (Max 50% discount)"
+    },
+    {
+        "id": "artifacts_base::faster_factories",
+        "displayName": "Faster Factories",
+        "image": "spr_pixl_artifact_faster_factories",
+        "isUnique": false,
+        "description": "Speeds up your factories by 0.001x per piece! (Max 2x speed)"
+    },
+    {
+        "id": "artifacts_base::artifact_discovery_mult",
+        "displayName": "Higher Artifact Discovery Chance",
+        "image": "spr_pixl_artifact_higher_artifact_chance",
+        "isUnique": false,
+        "description": "Increase your artifact discovery chance by 0.1% per piece!"
+    },
+    {
+        "id": "artifacts_base::supercomputer_output",
+        "displayName": "Supercomputer Output",
+        "image": "spr_pixl_artifact_double_supercomputer",
+        "isUnique": true,
+        "description": "Doubles the output of the supercomputer!"
+    },
+    {
+        "id": "artifacts_base::machine_output",
+        "displayName": "Machine Output",
+        "image": "spr_pixl_artifact_double_machine",
+        "isUnique": true,
+        "description": "Doubles the output of the machine!"
+    },
+    {
+        "id": "artifacts_base::rocket_fuel_cost",
+        "displayName": "Rocket Fuel Cost",
+        "image": "spr_pixl_artifact_cheaper_rocket_fuel",
+        "isUnique": true,
+        "description": "Halves the fuel cost of rocket missions!"
+    },
+    {
+        "id": "artifacts_base::extra_housing",
+        "displayName": "Bigger Houses",
+        "image": "spr_pixl_artifact_bigger_houses",
+        "isUnique": true,
+        "description": "Adds one capacity to every house!"
+    },
+    {
+        "id": "artifacts_base::bonus_housing_quality",
+        "displayName": "Fancier Houses",
+        "image": "spr_pixl_artifact_better_houses",
+        "isUnique": true,
+        "description": "Adds 10 housing quality to every house! (Doesn't show in building window, but it does work!)"
+    }
+]

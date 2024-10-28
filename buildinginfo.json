@@ -13,7 +13,7 @@
         "knowledge": 0,
         "category": "Unique Buildings",
         "specialInfo": ["unique"],
-        "unlockedByDefault": false
+        "unlockedByDefault": true
     },
     {
         "className": "pixl_ArtifactHunters",
@@ -32,6 +32,7 @@
         "residents": 6,
         "jobs": 6,
         "quality": 100,
-        "unlockedByDefault": true
+        "unlockedByDefault": false,
+        "notUnlockedWithAll": true
     }
 ]
