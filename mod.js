@@ -279,6 +279,8 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
             let artifactDisp = this.addArtifactDisplay(artifact);
             if(artifactDisp)
                 i++;
+            else
+                continue;
             if(i == this.maxArtifactsPerRow){
                 i = 0;
                 this.city.gui.windowInner.addChild(row);
@@ -291,8 +293,12 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
                 row.addChild(new gui_GUISpacing(row, new common_Point(2,10)));
             }
         }
-        this.city.gui.windowInner.addChild(row);
-        this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,10)));
+        if(i == -1){
+            this.city.gui.windowAddInfoText("You don't own any artifacts currently!");
+        } else {
+            this.city.gui.windowInner.addChild(row);
+            this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,10)));
+        }
     },
     addArtifactDisplay: function(artifact){
         // let container = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner)
