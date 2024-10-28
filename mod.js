@@ -1,6 +1,6 @@
 let dontInit = false;
 let dontInitTiers = false;
-let ARE_ARTIFACT_CHEATS_ENABLED = true;
+let ARE_ARTIFACT_CHEATS_ENABLED = false;
 // in case anyone wants to override things
 if(typeof ARTIFACTS_SHOULD_NOT_INIT !== 'undefined') {
     // if this runs, it means another mod is overriding some of the default mod behavior
@@ -431,32 +431,37 @@ Liquid.onInfoFilesLoaded("artifactsInfo.json", function(data){
             onAmountChange = (a, amt, isFirst)=>{};
         else
             onAmountChange = tl.onAmountChange;
-        ARTIFACTS.registerArtifactFull(artifact.id, artifact.displayName, artifact.image, desc, tl.currentEffectText, onAmountChange, artifact.isUnique, tl.overrides);
+        let currentEffect;
+        if(typeof tl.currentEffectText == "string")
+            currentEffect = function(thisArtifact){return tl.currentEffectText};
+        else
+            currentEffect = tl.currentEffectText;
+        ARTIFACTS.registerArtifactFull(artifact.id, artifact.displayName, artifact.image, desc, currentEffect, onAmountChange, artifact.isUnique, tl.overrides);
     }
 });
 
 
 // id, currentEffect, onAmountChange, dynamicDescription|null, overrides|null
 // id, function(thisArtifact), function(thisArtifact, newAmount, isFirst), function(thisArtifact), {onDiscoevrySound}
-ARTIFACTS.registerArtifact("artifacts_base::bonus_happiness", (a)=>{
-    return "Currently adding " + (Math.floor((a.data.amount * 0.01 + a.tier * 0.5)*100)/100) + " bonus happiness!";
-});
+// ARTIFACTS.registerArtifact("artifacts_base::bonus_happiness", (a)=>{
+//     return "Currently adding " + (Math.floor((a.data.amount * 0.01 + a.tier * 0.5)*100)/100) + " bonus happiness!";
+// });
 
-ARTIFACTS.registerArtifact("artifacts_base::cheaper_buildings", (a)=>{
-    return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
-});
+// ARTIFACTS.registerArtifact("artifacts_base::cheaper_buildings", (a)=>{
+//     return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
+// });
 
-ARTIFACTS.registerArtifact("artifacts_base::cheaper_upgrades", (a)=>{
-    return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
-});
+// ARTIFACTS.registerArtifact("artifacts_base::cheaper_upgrades", (a)=>{
+//     return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
+// });
 
-ARTIFACTS.registerArtifact("artifacts_base::faster_factories", (a)=>{
-    return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
-});
+// ARTIFACTS.registerArtifact("artifacts_base::faster_factories", (a)=>{
+//     return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
+// });
 
-ARTIFACTS.registerArtifact("artifacts_base::artifact_discovery_mult", (a)=>{
-    return `Current boost: +${(a.data.amount * 0.001).toFixed(2)}%`;
-});
+// ARTIFACTS.registerArtifact("artifacts_base::artifact_discovery_mult", (a)=>{
+//     return `Current boost: +${(a.data.amount * 0.001).toFixed(2)}%`;
+// });
 
 
 
@@ -482,77 +487,15 @@ ARTIFACTS.registerArtifact("artifacts_base::artifact_discovery_mult", (a)=>{
     ARTIFACTS.discoveryMultipliers.artifacts_base = amt * 0.001 + 1;
 });
 
-ARTIFACTS.registerArtifact("artifacts_base::supercomputer_output", "Doubles the output of the supercomputer!");
+ARTIFACTS.registerArtifact("artifacts_base::supercomputer_output", "");
 
-ARTIFACTS.registerArtifact("artifacts_base::machine_output", "Doubles the output of the machine!");
+ARTIFACTS.registerArtifact("artifacts_base::machine_output", "");
 
-ARTIFACTS.registerArtifact("artifacts_base::rocket_fuel_cost", "Halves the fuel cost of rocket missions!");
+ARTIFACTS.registerArtifact("artifacts_base::rocket_fuel_cost", "");
 
-ARTIFACTS.registerArtifact("artifacts_base::extra_housing", "Adds one capacity to every house!");
+ARTIFACTS.registerArtifact("artifacts_base::extra_housing", "");
 
-ARTIFACTS.registerArtifact("artifacts_base::bonus_housing_quality", "Adds 10 housing quality to every house! (Doesn't show in building window, but it does work!)");
-
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::supercomputer_output", "Supercomputer Output", "spr_pixl_artifact_double_supercomputer",
-//     "Doubles the output of the supercomputer!"
-// )
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::machine_output", "Machine Output", "spr_pixl_artifact_double_machine",(a)=>{
-//     return "Doubles the output of the machine!"
-// }, (a)=>{
-//     return "";
-// }, (a, amt, f)=>{}, true);
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::rocket_fuel_cost", "Rocket Fuel Cost", "spr_pixl_artifact_cheaper_rocket_fuel",(a)=>{
-//     return "Halves the fuel cost of rocket missions!"
-// }, (a)=>{
-//     return "";
-// }, (a, amt, f)=>{}, true);
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::extra_housing", "Bigger Houses", "spr_pixl_artifact_bigger_houses",(a)=>{
-//     return "Adds one capacity to every house!"
-// }, (a)=>{
-//     return "";
-// }, (a, amt, f)=>{}, true);
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::bonus_housing_quality", "Fancier Houses", "spr_pixl_artifact_better_houses",(a)=>{
-//     return "Adds 10 housing quality to every house! (Doesn't show in building window, but it does work!)"
-// }, (a)=>{
-//     return "";
-// }, (a, amt, f)=>{}, true);
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::bonus_happiness", "Bonus Happiness", "spr_pixl_artifact_bonus_happiness",(a)=>{
-//     return "Adds 0.01 happiness per piece! Grants a bonus 0.5 happiness per tier above common!"
-// }, (a)=>{
-//     return "Currently adding " + (Math.floor((a.data.amount * 0.01 + a.tier * 0.5)*100)/100) + " bonus happiness!";
-// }, (a, amt, f)=>{}, false);
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::cheaper_buildings", "Cheaper Buildings", "spr_pixl_artifact_cheaper_building",(a)=>{
-//     return "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)"
-// }, (a)=>{
-//     return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
-// }, (a, amt, f)=>{}, false);
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::cheaper_upgrades", "Cheaper Upgrades", "spr_pixl_artifact_cheaper_upgrades",(a)=>{
-//     return "Reduces the cost of building upgrades by 0.05% per piece! (Max 50% discount)"
-// }, (a)=>{
-//     return `Current reduction: ${(Math.min(1000, a.data.amount) * 0.05).toFixed(2)}%`;
-// }, (a, amt, f)=>{}, false);
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::faster_factories", "Faster Factories", "spr_pixl_artifact_faster_factories",(a)=>{
-//     return "Speeds up your factories by 0.001x per piece! (Max 2x speed)"
-// }, (a)=>{
-//     return `Current boost: +${(Math.min(1000, ARTIFACTS.a["artifacts_base::faster_factories"].data.amount) * 0.001).toFixed(2)}x`;
-// }, (a, amt, f)=>{}, false);
-
-// ARTIFACTS.registerArtifactFull("artifacts_base::artifact_discovery_mult", "Higher Artifact Discovery Chance", "spr_pixl_artifact_higher_artifact_chance",(a)=>{
-//     return "Increase your artifact discovery chance by 0.1% per piece!"
-// }, (a)=>{
-//     return `Current boost: +${(a.data.amount * 0.001).toFixed(2)}%`;
-// }, (a, amt, f)=>{
-//     ARTIFACTS.discoveryMultipliers.artifacts_base = amt * 0.001 + 1;
-// }, false);
-let HAS_UPDATED_ARTIFACTS = true;
+ARTIFACTS.registerArtifact("artifacts_base::bonus_housing_quality", "");
 
 ModTools.addSaveDataEarly("pixl::artifacts",
 function(city, queue, version){
@@ -663,20 +606,6 @@ ModTools.onModsLoaded(function(){
     }
 } (Permanent.prototype.get_attractiveness));
 
-// (function(orig) {
-//     worldResources_AlienRuins.prototype.awardAnyBonuses = function() {
-//         let tmp = this.bonusesAwarded;
-//         orig.call(this);
-//         if(tmp != this.bonusesAwarded){
-//             if(tmp == 0 || tmp == 2){
-//                 let a = ARTIFACTS.getAllUniqueIds(false);
-//                 if(a.length)
-//                     ARTIFACTS.discoverArtifacts(1, 1, null, a)
-//             }
-//         }
-//     }
-// } (worldResources_AlienRuins.prototype.awardAnyBonuses));
-
 (function(orig) {
     simulation_RocketMission.prototype.giveMissionReward = function() {
         let dest = this.destination;
@@ -704,7 +633,7 @@ ModTools.onModsLoaded(function(){
                 this.missionCompletionText = "";
             }
             this.missionCompletionText += "You found an artifact!";
-            let discoveredArtifacts = ARTIFACTS.discoverArtifacts(1, 1, false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
+            let discoveredArtifacts = ARTIFACTS.discoverArtifacts(1, 1, false, [random_Random.fromArray(possibleArtifacts)]);
             for (const [k, v] of Object.entries(discoveredArtifacts)) {
                 this.missionCompletionText += "\n" + ARTIFACTS.a[k].displayName + ": " + v;
             }
