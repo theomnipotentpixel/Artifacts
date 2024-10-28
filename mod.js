@@ -349,6 +349,10 @@ ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
 		if(this.workers.length != this.get_jobs()) {
 			return "We need more hunters!\nMake sure all 8 jobs are filled";
 		}
+        switch(this.currentMission){
+            case 0:
+                return "Build the artifact gallery!";
+        }
 		return common_Localize.lo("secret_society_mission_" + this.currentMission);
 	},
     checkMissionCompletions: function() {
@@ -538,19 +542,19 @@ ModTools.onModsLoaded(function(){
     }
 } (Permanent.prototype.get_attractiveness));
 
-(function(orig) {
-    worldResources_AlienRuins.prototype.awardAnyBonuses = function() {
-        let tmp = this.bonusesAwarded;
-        orig.call(this);
-        if(tmp != this.bonusesAwarded){
-            if(tmp == 0 || tmp == 2){
-                let a = ARTIFACTS.getAllUniqueIds(false);
-                if(a.length)
-                    ARTIFACTS.discoverArtifacts(1, 1, null, a)
-            }
-        }
-    }
-} (worldResources_AlienRuins.prototype.awardAnyBonuses));
+// (function(orig) {
+//     worldResources_AlienRuins.prototype.awardAnyBonuses = function() {
+//         let tmp = this.bonusesAwarded;
+//         orig.call(this);
+//         if(tmp != this.bonusesAwarded){
+//             if(tmp == 0 || tmp == 2){
+//                 let a = ARTIFACTS.getAllUniqueIds(false);
+//                 if(a.length)
+//                     ARTIFACTS.discoverArtifacts(1, 1, null, a)
+//             }
+//         }
+//     }
+// } (worldResources_AlienRuins.prototype.awardAnyBonuses));
 
 (function(orig) {
     simulation_RocketMission.prototype.giveMissionReward = function() {
@@ -558,14 +562,31 @@ ModTools.onModsLoaded(function(){
         orig.call(this);
         if(dest != 0 && dest != 1)
             return;
-        if(this.missionCompletionText == common_Localize.lo("mission_completed_nothing_found")){
-            this.missionCompletionText = "";
+        if(dest == 0){
+            let possibleArtifacts = ARTIFACTS.getAllIds(false, false);
+            if(possibleArtifacts == [])
+                return;
+            if(this.missionCompletionText == common_Localize.lo("mission_completed_nothing_found")){
+                this.missionCompletionText = "";
+            }
+            this.missionCompletionText += "You found some artifacts!";
+            let discoveredArtifacts = ARTIFACTS.discoverArtifacts(5*(dest*2+1), 15*(dest*2+1), false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
+            for (const [k, v] of Object.entries(discoveredArtifacts)) {
+                this.missionCompletionText += "\n" + ARTIFACTS.a[k].displayName + ": " + v;
+            }
         }
-        this.missionCompletionText += "You found some artifacts!";
-        let possibleArtifacts = ARTIFACTS.getAllIds(false, false);
-        let discoveredArtifacts = ARTIFACTS.discoverArtifacts(5*(dest*2+1), 15*(dest*2+1), false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
-        for (const [k, v] of Object.entries(discoveredArtifacts)) {
-            this.missionCompletionText += "\n" + ARTIFACTS.a[k].displayName + ": " + v;
+        if(dest == 1){
+            let possibleArtifacts = ARTIFACTS.getAllUniqueIds(false);
+            if(possibleArtifacts == [])
+                return;
+            if(this.missionCompletionText == common_Localize.lo("mission_completed_nothing_found")){
+                this.missionCompletionText = "";
+            }
+            this.missionCompletionText += "You found an artifact!";
+            let discoveredArtifacts = ARTIFACTS.discoverArtifacts(1, 1, false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
+            for (const [k, v] of Object.entries(discoveredArtifacts)) {
+                this.missionCompletionText += "\n" + ARTIFACTS.a[k].displayName + ": " + v;
+            }
         }
     }
 } (simulation_RocketMission.prototype.giveMissionReward));
