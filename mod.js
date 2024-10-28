@@ -355,60 +355,60 @@ function(queue){
 
 });
 
-ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
-    onBuild: function(){
-		superClass.prototype.update.call(this);
-        this.city.progress.unlocks.unlock(buildings_pixl_ArtifactGallery);
-    },
-    addWindowInfoLines: function() {
-		var _gthis = this;
-		buildings_WorkWithHome.prototype.addWindowInfoLines.call(this);
-		this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.window,new common_Point(4,4)));
-		var anySQ = false;
-		if(this.currentMission == 8) {
-			anySQ = gui_CurrentMissionsWindow.displaySidequestsWithTag(this.city,this.city.gui,this.city.gui.innerWindowStage,this.city.gui.windowInner,"ArtifactHunters");
-		}
-		if(!this.isScenarioVariant && !anySQ) {
-			this.city.gui.windowAddInfoText(null,function() {
-				return _gthis.missionGetTitle();
-			},"Arial15");
-			this.city.gui.windowAddInfoText(null,function() {
-				return _gthis.missionGetText();
-			});
-		}
-	},
-    missionGetTitle: function() {
-		if(this.currentMission == 8) {
-			return "Thank You";
-		}
-		return "Current Task";
-	}
-	,missionGetText: function() {
-		if(this.currentMission >= 8) {
-			return "We will be forever grateful.";
-		}
-		if(this.workers.length != this.get_jobs()) {
-			return "We need more hunters!\nMake sure all 8 jobs are filled";
-		}
-        switch(this.currentMission){
-            case 0:
-                return "Build the artifact gallery!";
-        }
-		return common_Localize.lo("secret_society_mission_" + this.currentMission);
-	},
-    checkMissionCompletions: function() {
+// ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
+//     onBuild: function(){
+// 		superClass.prototype.update.call(this);
+//         this.city.progress.unlocks.unlock(buildings_pixl_ArtifactGallery);
+//     },
+//     addWindowInfoLines: function() {
+// 		var _gthis = this;
+// 		buildings_WorkWithHome.prototype.addWindowInfoLines.call(this);
+// 		this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.window,new common_Point(4,4)));
+// 		var anySQ = false;
+// 		if(this.currentMission == 8) {
+// 			anySQ = gui_CurrentMissionsWindow.displaySidequestsWithTag(this.city,this.city.gui,this.city.gui.innerWindowStage,this.city.gui.windowInner,"ArtifactHunters");
+// 		}
+// 		if(!this.isScenarioVariant && !anySQ) {
+// 			this.city.gui.windowAddInfoText(null,function() {
+// 				return _gthis.missionGetTitle();
+// 			},"Arial15");
+// 			this.city.gui.windowAddInfoText(null,function() {
+// 				return _gthis.missionGetText();
+// 			});
+// 		}
+// 	},
+//     missionGetTitle: function() {
+// 		if(this.currentMission == 8) {
+// 			return "Thank You";
+// 		}
+// 		return "Current Task";
+// 	}
+// 	,missionGetText: function() {
+// 		if(this.currentMission >= 8) {
+// 			return "We will be forever grateful.";
+// 		}
+// 		if(this.workers.length != this.get_jobs()) {
+// 			return "We need more hunters!\nMake sure all 8 jobs are filled";
+// 		}
+//         switch(this.currentMission){
+//             case 0:
+//                 return "Build the artifact gallery!";
+//         }
+// 		return common_Localize.lo("secret_society_mission_" + this.currentMission);
+// 	},
+//     checkMissionCompletions: function() {
         
-    },
-    update: function(timeMod){
-		superClass.prototype.update.call(this,timeMod);
-    }
-}}, "spr_artifact_hunters",
-function(queue){
+//     },
+//     update: function(timeMod){
+// 		superClass.prototype.update.call(this,timeMod);
+//     }
+// }}, "spr_artifact_hunters",
+// function(queue){
 
-},
-function(queue){
+// },
+// function(queue){
 
-});
+// });
 
 Liquid.onInfoFilesLoaded("artifactsInfo.json", function(data){
     for(let artifact of data){
