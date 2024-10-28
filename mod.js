@@ -315,6 +315,10 @@ function(queue){
 });
 
 ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
+    onBuild: function(){
+		superClass.prototype.update.call(this);
+        this.city.progress.unlocks.unlock(buildings_pixl_ArtifactGallery);
+    },
     addWindowInfoLines: function() {
 		var _gthis = this;
 		buildings_WorkWithHome.prototype.addWindowInfoLines.call(this);
@@ -388,9 +392,9 @@ ARTIFACTS.registerArtifact("artifacts_base", "faster_factories", "Faster Factori
 ARTIFACTS.registerArtifact("artifacts_base", "artifact_discovery_mult", "Higher Artifact Discovery Chance", "spr_pixl_artifact_higher_artifact_chance",(a)=>{
     return "Increase your artifact discovery chance by 0.1% per piece!"
 }, (a)=>{
-    return `Current boost: +${(a.data.amt * 0.001).toFixed(2)}%`;
+    return `Current boost: +${(a.data.amount * 0.001).toFixed(2)}%`;
 }, (a, amt, f)=>{
-    ARTIFACTS.discoveryMultipliers = amt * 0.001 + 1;
+    ARTIFACTS.discoveryMultipliers.artifacts_base = amt * 0.001 + 1;
 }, false);
 
 ARTIFACTS.registerArtifact("artifacts_base", "supercomputer_output", "Supercomputer Output", "spr_pixl_artifact_double_supercomputer",(a)=>{
@@ -418,7 +422,7 @@ ARTIFACTS.registerArtifact("artifacts_base", "extra_housing", "Bigger Houses", "
 }, (a, amt, f)=>{}, true);
 
 ARTIFACTS.registerArtifact("artifacts_base", "bonus_housing_quality", "Fancier Houses", "spr_pixl_artifact_better_houses",(a)=>{
-    return "Adds 10 housing quality to every house!"
+    return "Adds 10 housing quality to every house! (Doesn't show in building window, but it does work!)"
 }, (a)=>{
     return "";
 }, (a, amt, f)=>{}, true);
@@ -523,12 +527,6 @@ ModTools.onModsLoaded(function(){
 } (buildings_House.prototype.get_residentCapacity));
 
 (function(orig) {
-    buildings_WorkWithHome.prototype.get_residentCapacity = function() {
-        return orig.call(this) + ARTIFACTS.a["artifacts_base::extra_housing"].data.amount;
-    }
-} (buildings_WorkWithHome.prototype.get_residentCapacity));
-
-(function(orig) {
     buildings_RedwoodTreeHouse.prototype.get_residentCapacity = function() {
         return orig.call(this) + ARTIFACTS.a["artifacts_base::extra_housing"].data.amount;
     }
@@ -539,8 +537,6 @@ ModTools.onModsLoaded(function(){
         return orig.call(this) + ARTIFACTS.a["artifacts_base::bonus_housing_quality"].data.amount * 10;
     }
 } (Permanent.prototype.get_attractiveness));
-
-
 
 (function(orig) {
     worldResources_AlienRuins.prototype.awardAnyBonuses = function() {
@@ -555,3 +551,21 @@ ModTools.onModsLoaded(function(){
         }
     }
 } (worldResources_AlienRuins.prototype.awardAnyBonuses));
+
+(function(orig) {
+    simulation_RocketMission.prototype.giveMissionReward = function() {
+        let dest = this.destination;
+        orig.call(this);
+        if(dest != 0 && dest != 1)
+            return;
+        if(this.missionCompletionText == common_Localize.lo("mission_completed_nothing_found")){
+            this.missionCompletionText = "";
+        }
+        this.missionCompletionText += "You found some artifacts!";
+        let possibleArtifacts = ARTIFACTS.getAllIds(false, false);
+        let discoveredArtifacts = ARTIFACTS.discoverArtifacts(5*(dest*2+1), 15*(dest*2+1), false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
+        for (const [k, v] of Object.entries(discoveredArtifacts)) {
+            this.missionCompletionText += "\n" + ARTIFACTS.a[k].displayName + ": " + v;
+        }
+    }
+} (simulation_RocketMission.prototype.giveMissionReward));
