@@ -41,8 +41,19 @@ if(!dontInitTiers){
 if(!ARTIFACTS.discovery_audios)
     ARTIFACTS.discovery_audios = {};
 
-if(!ARTIFACTS.modPath)
-    ARTIFACTS.modPath = _internalModHelpers.path + "\\" + Liquid.getModID();
+if(!ARTIFACTS.modPath){
+    let tmp = document.currentScript.src;
+    // console.log(tmp);
+    tmp = tmp.split("/");
+    // console.log(tmp);
+    tmp.pop();
+    // console.log(tmp);
+    tmp = tmp.join("/");
+    // console.log(tmp);
+    ARTIFACTS.modPath = tmp;
+}
+
+
 
 // Audio.get().playSound(Audio.get().buttonSound);
 
