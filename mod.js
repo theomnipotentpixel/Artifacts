@@ -43,13 +43,9 @@ if(!ARTIFACTS.discovery_audios)
 
 if(!ARTIFACTS.modPath){
     let tmp = document.currentScript.src;
-    // console.log(tmp);
     tmp = tmp.split("/");
-    // console.log(tmp);
     tmp.pop();
-    // console.log(tmp);
     tmp = tmp.join("/");
-    // console.log(tmp);
     ARTIFACTS.modPath = tmp;
 }
 
