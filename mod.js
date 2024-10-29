@@ -768,7 +768,7 @@ ModTools.onModsLoaded(function(){
             return;
         if(dest == 0 && ARTIFACTS.CAN_DISCOVER_ARTIFACTS){
             let possibleArtifacts = ARTIFACTS.getAllIds(false, false);
-            if(possibleArtifacts == [])
+            if(possibleArtifacts.length == 0)
                 return;
             if(this.missionCompletionText == common_Localize.lo("mission_completed_nothing_found")){
                 this.missionCompletionText = "";
@@ -784,7 +784,7 @@ ModTools.onModsLoaded(function(){
         }
         if(dest == 1 && ARTIFACTS.CAN_DISCOVER_ARTIFACTS){
             let possibleArtifacts = ARTIFACTS.getAllUniqueIds(false);
-            if(possibleArtifacts == [])
+            if(possibleArtifacts.length == 0)
                 return;
             if(this.missionCompletionText == common_Localize.lo("mission_completed_nothing_found")){
                 this.missionCompletionText = "";
