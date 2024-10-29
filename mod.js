@@ -351,7 +351,7 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         ()=>{
             _this.city.gui.tooltip.setText(this.city.gui.windowInner, 
                 artifact.displayName + "\n\n" +
-                (isUnique ? "Unique\n" : `${isMaxTier ? "Maxed" : ARTIFACT_TIERS[artifact.tier].tier}\n`) + (isUnique ? `` : `${artifact.data.amount} / ${ARTIFACT_TIERS[artifact.tier+1].amountNeeded} left for upgrade\n`) +
+                (isUnique ? "Unique\n" : `${ARTIFACT_TIERS[artifact.tier].tier}\n`) + (isUnique ? `` : `${artifact.data.amount} / ${ARTIFACT_TIERS[artifact.tier+1].amountNeeded} left for upgrade\n`) +
                 artifact.getDescription() + "\n" +
                 artifact.getCurrentEffectText(),
                 null,
