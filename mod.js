@@ -509,7 +509,7 @@ ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
                 }
             },
             {
-                missionDescription: "Have 500 total artifact levels!",
+                missionDescription: "Have 500 total artifacts!",
                 checkComplete: (city)=>{
                     let allIds = ARTIFACTS.getAllIds();
                     let nLevels = 0;
@@ -530,7 +530,7 @@ ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
                 }
             },
             {
-                missionDescription: "Have 1000 total artifact levels!",
+                missionDescription: "Have 1000 total artifacts!",
                 checkComplete: (city)=>{
                     let allIds = ARTIFACTS.getAllIds();
                     let nLevels = 0;
@@ -551,7 +551,7 @@ ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
                 }
             },
             {
-                missionDescription: "Have 2500 total artifact levels!",
+                missionDescription: "Have 2500 total artifacts!",
                 checkComplete: (city)=>{
                     let allIds = ARTIFACTS.getAllIds();
                     let nLevels = 0;
@@ -643,9 +643,9 @@ ARTIFACTS.registerArtifact("artifacts_base::faster_factories", (a)=>{
 });
 
 ARTIFACTS.registerArtifact("artifacts_base::artifact_discovery_mult", (a)=>{
-    return `Current boost: +${(a.data.amount * 0.01).toFixed(2)}x`;
+    return `Current boost: +${(a.data.amount * 0.02).toFixed(2)}x`;
 }, (a, amt, f)=>{
-    ARTIFACTS.discoveryMultipliers.artifacts_base = a.data.amount * 0.01 + 1;
+    ARTIFACTS.discoveryMultipliers.artifacts_base = a.data.amount * 0.02 + 1;
 });
 
 ARTIFACTS.registerArtifact("artifacts_base::supercomputer_output", "");
@@ -782,9 +782,9 @@ ModTools.onModsLoaded(function(){
             }
             this.missionCompletionText += "You found some artifacts!";
             let discoveredArtifacts = ARTIFACTS.discoverArtifacts(
-                Math.ceil(5*ARTIFACTS.getDiscoveryMultiplier()),
-                Math.ceil(15*ARTIFACTS.getDiscoveryMultiplier()),
-                false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
+                Math.ceil(25*ARTIFACTS.getDiscoveryMultiplier()),
+                Math.ceil(50*ARTIFACTS.getDiscoveryMultiplier()),
+                false, [random_Random.fromArray(possibleArtifacts), random_Random.fromArray(possibleArtifacts)]);
             for (const [k, v] of Object.entries(discoveredArtifacts)) {
                 this.missionCompletionText += "\n" + ARTIFACTS.a[k].displayName + ": " + v;
             }
