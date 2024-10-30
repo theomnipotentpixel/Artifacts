@@ -656,19 +656,8 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
             artifact.data.hasBeenResearched = true;
             _this.reloadWindow();
         };
-        let container = new gui_ContainerButton(gui,gui.innerWindowStage,gui.windowInner, tryBuyUpgrade, ()=>{return false;});
-        container.container.padding = {top: 2, bottom: 2, left: 2, right:2};
-        let artifactName = new gui_TextElement(gui.windowInner,gui.innerWindowStage,artifact.displayName,null,"Arial15",{ left : 0, top : 3, right : 0, bottom : -3},null,true);
-
-        let materialDisplay = new gui_MaterialsCostDisplay(city, this.getArtifactResearchCost(), "");
-        let materialHolder = new gui_ContainerHolder(this.city.gui.windowInner,this.city.gui.innerWindowStage,materialDisplay,null,null);
-
-        let row = new gui_GUIContainer(gui, gui.innerWindowStage, gui.windowInner);
-        row.addChild(artifactName);
-        container.container.addChild(row);
-        row = new gui_GUIContainer(gui, gui.innerWindowStage, gui.windowInner);
-        row.addChild(materialHolder);
-        container.container.addChild(row);
+        
+        
 
         return container
     }
@@ -772,6 +761,7 @@ function(city, queue, version){
 ModTools.onCityCreate(function(city){
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
         ARTIFACTS.a[k].data = JSON.parse(JSON.stringify(ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT));
+        ARTIFACTS.a[k].onAmountChange(ARTIFACTS.a[k], ARTIFACTS.a[k].data.amount, false);
     }
     ARTIFACTS.updateTiers();
 });
