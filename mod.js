@@ -643,9 +643,9 @@ ARTIFACTS.registerArtifact("artifacts_base::faster_factories", (a)=>{
 });
 
 ARTIFACTS.registerArtifact("artifacts_base::artifact_discovery_mult", (a)=>{
-    return `Current boost: +${(a.data.amount * 0.02).toFixed(2)}x`;
+    return `Current boost: +${(a.data.amount * 0.01).toFixed(2)}x`;
 }, (a, amt, f)=>{
-    ARTIFACTS.discoveryMultipliers.artifacts_base = a.data.amount * 0.02 + 1;
+    ARTIFACTS.discoveryMultipliers.artifacts_base = a.data.amount * 0.01 + 1;
 });
 
 ARTIFACTS.registerArtifact("artifacts_base::supercomputer_output", "");

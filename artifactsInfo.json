@@ -32,7 +32,7 @@
         "displayName": "Higher Artifact Discovery Chance",
         "image": "spr_pixl_artifact_higher_artifact_chance",
         "isUnique": false,
-        "description": "Increase your artifact discovery multiplier by 0.02x per piece!"
+        "description": "Increase your artifact discovery multiplier by 0.01x per piece!"
     },
     {
         "id": "artifacts_base::supercomputer_output",
