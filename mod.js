@@ -1,6 +1,6 @@
 let dontInit = false;
 let dontInitTiers = false;
-let ARE_ARTIFACT_CHEATS_ENABLED = false;
+let ARE_ARTIFACT_CHEATS_ENABLED = true;
 // in case anyone wants to override things
 if(typeof ARTIFACTS_SHOULD_NOT_INIT !== 'undefined') {
     // if this runs, it means another mod is overriding some of the default mod behavior
@@ -22,7 +22,8 @@ if(!ARTIFACTS.CAN_DISCOVER_ARTIFACTS)
 if(!ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT){
     ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT = {
         amount: 0,
-        discoveredPrior: false
+        discoveredPrior: false,
+        hasBeenResearched: false
     };
 }
 
@@ -74,6 +75,25 @@ ARTIFACTS.getAllIds = function(includeUniques, includeMaxed){
         if(!includeUniques && v.isUnique)
             continue;
         if((ARTIFACT_TIERS[v.tier+1].amountNeeded == Infinity && !includeMaxed) || (v.isUnique && v.data.amount == 1 && !includeMaxed))
+            continue;
+        ids.push(k);
+    }
+    return ids;
+}
+
+if(!ARTIFACTS.getAllDiscoveredIds)
+ARTIFACTS.getAllDiscoveredIds = function(includeUniques, includeMaxed){
+    if(includeUniques == null)
+        includeUniques = true;
+    if(includeMaxed == null)
+        includeMaxed = true;
+    let ids = [];
+    for (const [k, v] of Object.entries(ARTIFACTS.a)) {
+        if(!includeUniques && v.isUnique)
+            continue;
+        if((ARTIFACT_TIERS[v.tier+1].amountNeeded == Infinity && !includeMaxed) || (v.isUnique && v.data.amount == 1 && !includeMaxed))
+            continue;
+        if(v.data.amount == 0)
             continue;
         ids.push(k);
     }
@@ -379,7 +399,7 @@ ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
     },
 	addWindowInfoLines: function() {
 		var _gthis = this;
-		buildings_WorkWithHome.prototype.addWindowInfoLines.call(this);
+		superClass.prototype.addWindowInfoLines.call(this);
 		this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.window,new common_Point(4,4)));
 		var anySQ = false;
 		if(this.currentMission == 8) {
@@ -584,6 +604,76 @@ function(queue){
 buildings_pixl_ArtifactHunters.missionCompleteSound = 
     PIXI.sound.Sound.from({ url : `${ARTIFACTS.modPath}\\sounds\\artifact_hunters_mission_complete.mp3`, preload : true});
 
+ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
+    getArtifactResearchCost: function(){
+        let out = new Materials();
+        out.knowledge = 10000;
+        return out;
+    },
+    getAllUnresearchedArtifacts: function(){
+        let ids = [];
+        for (const [k, v] of Object.entries(ARTIFACTS.a)) {
+            if(v.isUnique)
+                continue;
+            if(v.data.hasBeenResearched)
+                continue;
+            ids.push(k);
+        }
+        return ids;
+    },
+    getAllResearchedArtifacts: function(){
+        let ids = [];
+        for (const [k, v] of Object.entries(ARTIFACTS.a)) {
+            if(v.isUnique)
+                continue;
+            if(!v.data.hasBeenResearched)
+                continue;
+            ids.push(k);
+        }
+        return ids;
+    },
+    addWindowInfoLines: function(){
+        superClass.prototype.addWindowInfoLines.call(this);
+
+        this.city.gui.windowAddInfoText("Research Artifacts");
+        let unresearchedIds = this.getAllUnresearchedArtifacts();
+        for(let id of unresearchedIds){
+            let upgradeButton = this.addArtifactResearch(ARTIFACTS.a[id]);
+            this.city.gui.windowInner.addChild(upgradeButton);
+        }
+    },
+    addArtifactResearch: function(artifact){
+        //function(city,building,upgrade,onUpgrade,canRemoveUpgrade,onButtonClickSound,notForParticularBuilding,onlyIfHasNot) {
+        // gui_CreateBuildingUpgrades.addUpgradeButton(this.city, this, )
+        let _this = this;
+        let city = this.city;
+        let gui = this.city.gui;
+        let tryBuyUpgrade = function(){
+            let canAfford = city.materials.canAfford(_this.getArtifactResearchCost());
+            if(!canAfford)
+                return;
+            city.materials.remove(_this.getArtifactResearchCost());
+            artifact.data.hasBeenResearched = true;
+            _this.reloadWindow();
+        };
+        let container = new gui_ContainerButton(gui,gui.innerWindowStage,gui.windowInner, tryBuyUpgrade, ()=>{return false;});
+        container.container.padding = {top: 2, bottom: 2, left: 2, right:2};
+        let artifactName = new gui_TextElement(gui.windowInner,gui.innerWindowStage,artifact.displayName,null,"Arial15",{ left : 0, top : 3, right : 0, bottom : -3},null,true);
+
+        let materialDisplay = new gui_MaterialsCostDisplay(city, this.getArtifactResearchCost(), "");
+        let materialHolder = new gui_ContainerHolder(this.city.gui.windowInner,this.city.gui.innerWindowStage,materialDisplay,null,null);
+
+        let row = new gui_GUIContainer(gui, gui.innerWindowStage, gui.windowInner);
+        row.addChild(artifactName);
+        container.container.addChild(row);
+        row = new gui_GUIContainer(gui, gui.innerWindowStage, gui.windowInner);
+        row.addChild(materialHolder);
+        container.container.addChild(row);
+
+        return container
+    }
+}}, "spr_artifact_research_center");
+
 ModTools.addBuildBasedUnlock(buildings_pixl_ArtifactHunters, function(blds) {
     return blds.h["buildings.GrapheneLab"] >= 1;
 }, function(blds) {
@@ -686,9 +776,9 @@ ModTools.onCityCreate(function(city){
     ARTIFACTS.updateTiers();
 });
 
-ModTools.onModsLoaded(function(){
+// ModTools.onModsLoaded(function(){
     
-});
+// });
 
 (function(orig) {
     simulation_Happiness.prototype.getActualHappiness = function() {
@@ -824,8 +914,7 @@ if(ARE_ARTIFACT_CHEATS_ENABLED){
     Liquid.addGeneralStatsButton((city)=>{
         let allArtifacts = ARTIFACTS.getAllIds();
         for(let id of allArtifacts){
-            ARTIFACTS.setArtifactAmount(id, 0);
-            ARTIFACTS.a[id].data.discoveredPrior = false;
+            ARTIFACTS.a[id].data = JSON.parse(JSON.stringify(ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT));
         }
     }, (city)=>{
         return "Clear Artifacts";

@@ -34,5 +34,22 @@
         "quality": 100,
         "unlockedByDefault": false,
         "showUnlockHint": "Build The Rocket to unlock!"
+    },
+    {
+        "className": "pixl_ArtifactResearchCenter",
+        "name": "Artifact Research Center",
+        "description": "An underground collective of cizitens dedicated to uncovering mysterious objects...",
+        "food": 0,
+        "wood": 0,
+        "stone": 0,
+        "machineParts": 0,
+        "refinedMetal": 0,
+        "computerChips": 0,
+        "graphene": 0,
+        "knowledge": 0,
+        "category": "Unique Buildings",
+        "specialInfo": ["unique"],
+        "jobs": 2,
+        "unlockedByDefault": true
     }
 ]
