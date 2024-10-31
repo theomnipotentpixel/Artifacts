@@ -462,7 +462,7 @@ ModTools.makeBuilding("pixl_ArtifactHunters", (superClass) => { return {
 	},
     __constructor__: function(game,stage,bgStage,city,world,position,worldPosition,id){
         this.currentMission = 0;
-        buildings_WorkWithHome.call(this,game,stage,bgStage,city,world,position,worldPosition,id);
+        superClass.call(this,game,stage,bgStage,city,world,position,worldPosition,id);
         
         this.missionCompleteSound = buildings_pixl_ArtifactHunters.missionCompleteSound;
         this.missions = [
@@ -612,8 +612,9 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
     },
     getArtifactCraftCost: function(){
         let out = new Materials();
-        out.stone = 100;
-        out.graphene = 1;
+        out.stone = 1000;
+        out.machineParts = 250;
+        out.graphene = 5;
         return out;
     },
     getAllUnresearchedArtifacts: function(){
@@ -642,56 +643,93 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
         superClass.prototype.addWindowInfoLines.call(this);
         let unresearchedIds = this.getAllUnresearchedArtifacts();
         let craftableIds = this.getAllResearchedArtifacts();
-        if(craftableIds.length)
-            this.city.gui.windowAddInfoText("Craft Artifacts");
-        let row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
-        let i = 0;
-        for(let id of craftableIds){
-            i++;
-            let artifactButton = this.addArtifactCraft(ARTIFACTS.a[id]);
-            row.addChild(artifactButton);
-            if(i >= 6){
-                this.city.gui.windowInner.addChild(row);
-                row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
-                this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,5)));
-                i = 0;
+        if(craftableIds.length){
+                this.city.gui.windowAddInfoText("Craft Artifacts");
+            let row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
+            let i = 0;
+            for(let id of craftableIds){
+                i++;
+                let artifactButton = this.addArtifactCraftSelection(ARTIFACTS.a[id]);
+                row.addChild(artifactButton);
+                if(i >= 6){
+                    this.city.gui.windowInner.addChild(row);
+                    row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
+                    this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,5)));
+                    i = 0;
+                }
             }
+            this.city.gui.windowInner.addChild(row);
+            
+            this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,5)));
+
+            this.addArtifactCraftAmountAndButton();
         }
-        this.city.gui.windowInner.addChild(row);
 
         if(unresearchedIds.length)
             this.city.gui.windowAddInfoText("Research Artifacts");
         for(let id of unresearchedIds){
-            let upgradeButton = this.addArtifactResearch(ARTIFACTS.a[id]);
-            // this.city.gui.windowInner.addChild(upgradeButton);
+            this.addArtifactResearch(ARTIFACTS.a[id]);
         }
     },
-    addArtifactCraft: function(artifact){
-        // let container = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner)
+    addArtifactCraftAmountAndButton: function(){
+        let city = this.city;
+        let gui = city.gui;
+        let materialsToPay = this.getArtifactCraftCost();
+        let _this = this;
+        let infoContainerInfo;
+        let mcd;
+
+        // function(gui,stage,parent,padding,getMinValue,getMaxValue,initialValue,setValue,setToOnClick,onClickHelp,stepSize,minWidth) {
+        let onChangeAmount = function(v){
+            _this.amountToCraftCurrent = v;
+            if(mcd != null){
+                materialsToPay = _this.getArtifactCraftCost().copy();
+                materialsToPay.multiply(v);
+                mcd.cost = materialsToPay;
+                mcd.updateCostDisplay();
+            }
+        }
+
+        let amountToCraftControl = new gui_NumberSelectControl(gui, gui.innerWindowStage, gui.windowInner, null, ()=>{return 1},
+         ()=>{return 100}, _this.amountToCraftCurrent, onChangeAmount, ()=>{return 1;}, "", 1, 20);
+
+        gui.windowInner.addChild(amountToCraftControl);
+
+        this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,5)));
+        
+        infoContainerInfo = gui_UpgradeWindowParts.createActivatableButton(gui,false,function() {
+            if(city.materials.canAfford(materialsToPay)) {
+                city.materials.remove(materialsToPay);
+                ARTIFACTS.gainOrLoseArtifactAmount(_this.selectedArtifact, _this.amountToCraftCurrent);
+                gui.notifyInPanel("Artifacts Crafted!", `You crafted ${_this.amountToCraftCurrent} ` +
+                    `${ARTIFACTS.a[_this.selectedArtifact].displayName} artifacts!`);
+            }
+        },"Craft!","");
+        
+        let infoContainer = infoContainerInfo.container;
+        if(materialsToPay.any()) {
+            let mcdContainer = new gui_GUIContainer(gui,gui.innerWindowStage,infoContainer);
+            mcd = new gui_MaterialsCostDisplay(city,materialsToPay,gui_UpgradeWindowParts.hasMultiUpgradeModeOn ? common_Localize.lo("per_building") : "");
+            let ch = mcdContainer.addChild(new gui_ContainerHolder(mcdContainer,gui.innerWindowStage,mcd,{ left : 0, right : 0, top : 0, bottom : 2},$bind(mcd,mcd.updateCostDisplay)));
+            infoContainer.addChild(mcdContainer);
+        }
+
+        
+    },
+    addArtifactCraftSelection: function(artifact){
         let texture = Resources.getTexture(artifact.spr)
         if (!texture.valid) texture = Resources.getTexture("spr_pixl_artifact_unknown")
-        // let artifactButton = this.city.gui.windowAddSimpleButton(texture, () => {
-        //     // _this.materialFrom = _i;
-        // }, " ")
-        // artifactButton.container.padding = { left : 4, right : 4, top : 4, bottom : 4}
-        // artifactButton.container.margin = { left : 4, right : 4, top : 4, bottom : 4}
-        // artifactButton.rect.width = 28;
-        // artifactButton.rect.height = 28;
-
-        //gui,stage,parent,action,isActive,onHover,buttonSpriteName,backColor,frontColor,autoSetProgress  	infoButton.container.addChild(new gui_ContainerHolder(infoButton.container,stage,new PIXI.Sprite(Resources.getTexture(textureName))));
-        
         let _this = this;
         let col;
         let progress = 0;
 
-        col = ((255 - Math.round(progress * 255)) << 16) +
-        ((Math.round(progress * 255)) << 8);
+        col = 0x00ff00;
 
-        let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{}, ()=>{return true},
+        let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{_this.selectedArtifact = artifact.id}, ()=>{return true},
         ()=>{
             _this.city.gui.tooltip.setText(this.city.gui.windowInner, artifact.displayName)
         }, "spr_button", 10526880, col, ()=>{
-            return 0;
+            return _this.selectedArtifact == artifact.id ? 1 : 0;
         });
         upgradeProgressBar.padding = { left : 2, right : 3, top : 2, bottom : 1}
         upgradeProgressBar.container.addChild(new gui_ContainerHolder(upgradeProgressBar.container,this.city.gui.innerWindowStage,new PIXI.Sprite(texture), { left : 2, right : 2, top : 2, bottom : 2}));
@@ -719,6 +757,11 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
             infoContainer.addChild(mcdContainer);
         }
         return infoContainer;
+    },
+    __constructor__: function(game,stage,bgStage,city,world,position,worldPosition,id){
+        this.selectedArtifact = null;
+        this.amountToCraftCurrent = 1;
+        superClass.call(this,game,stage,bgStage,city,world,position,worldPosition,id);
     }
 }}, "spr_artifact_research_center");
 
@@ -809,11 +852,13 @@ function(city, queue, version){
     let t = JSON.parse(queue.readString());
     // console.log(t);
     for (const [k, v] of Object.entries(t)) {
-        if(ARTIFACTS.a[k])
-            ARTIFACTS.a[k].data = v;
+        if(ARTIFACTS.a[k]){
+            for(const [k1, v1] of Object.entries(v)){
+                ARTIFACTS.a[k].data[k1] = v1;
+            }
+        }
     }
     ARTIFACTS.updateTiers();
-    // console.log(JSON.stringify(ARTIFACTS.a));
 }, 0);
 
 // for brand new worlds
