@@ -59,6 +59,13 @@ if(!ARTIFACTS.DEFAULTS.firstDiscoveryAudio){
     ARTIFACTS.DEFAULTS.defaultFirstDiscoveryAudio = PIXI.sound.Sound.from({ url : `${ARTIFACTS.modPath}\\sounds\\artifacts_default_first_discovery.wav`, preload : true});
 }
 
+if(!ARTIFACTS.DEFAULTS.defaultCraftCost){
+    ARTIFACTS.DEFAULTS.defaultCraftCost = new Materials();
+    ARTIFACTS.DEFAULTS.defaultCraftCost.stone = 1000;
+    ARTIFACTS.DEFAULTS.defaultCraftCost.machineParts = 250;
+    ARTIFACTS.DEFAULTS.defaultCraftCost.graphene = 5;
+}
+
 if(!ARTIFACTS.discoveryMultipliers)
     ARTIFACTS.discoveryMultipliers = {
         artifacts_base: 1
@@ -79,6 +86,11 @@ ARTIFACTS.getAllIds = function(includeUniques, includeMaxed){
         ids.push(k);
     }
     return ids;
+}
+
+if(!ARTIFACTS.getArtifact)
+ARTIFACTS.getArtifact = function(id){
+    return ARTIFACTS.a[id];
 }
 
 if(!ARTIFACTS.getAllDiscoveredIds)
@@ -171,11 +183,13 @@ ARTIFACTS.updateTiers = function(){
 
 //                                   string,   string,     string,                string,         function(thisArtifact), function(thisArtifact), function(thisArtifact, newAmount, isFirst), bool, object
 if(!ARTIFACTS.registerArtifactFull)
-ARTIFACTS.registerArtifactFull = function(id, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange, isUnique, overrides){
+ARTIFACTS.registerArtifactFull = function(id, artifactDisplayName, artifactSprite, artifactDescription, artifactCurrentEffectText, onAmountChange, isUnique, cost,overrides){
     if(overrides == null)
         overrides = {};
-    if(overrides.onDiscoverySound == false)
+    if(!overrides.onDiscoverySound)
         overrides.onDiscoverySound = ARTIFACTS.DEFAULTS.noFirstDiscoveryAudio;
+    if(overrides.canBeMadeCheaper == null)
+        overrides.canBeMadeCheaper = true;
     
     ARTIFACTS.a[id] = {
         id: id,
@@ -187,6 +201,7 @@ ARTIFACTS.registerArtifactFull = function(id, artifactDisplayName, artifactSprit
         data: JSON.parse(JSON.stringify(ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT)),
         tier: 0,
         isUnique: isUnique,
+        cost: cost,
         overrides: overrides == null ? {} : overrides
     }
     if(typeof artifactDescription == "function")
@@ -611,10 +626,12 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
         return out;
     },
     getArtifactCraftCost: function(){
-        let out = new Materials();
-        out.stone = 1000;
-        out.machineParts = 250;
-        out.graphene = 5;
+        if(this.selectedArtifact == null)
+            return ARTIFACTS.DEFAULTS.defaultCraftCost.copy();
+
+        let out = ARTIFACTS.getArtifact(this.selectedArtifact).cost.copy();
+        if(ARTIFACTS.getArtifact(this.selectedArtifact).overrides.canBeMadeCheaper)
+            out.multiply(1 - (Math.min(7500, ARTIFACTS.a["artifacts_base::cheaper_artifact_crafts"].data.amount) * 0.0001));
         return out;
     },
     getAllUnresearchedArtifacts: function(){
@@ -675,6 +692,7 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
         let city = this.city;
         let gui = city.gui;
         let materialsToPay = this.getArtifactCraftCost();
+        materialsToPay.roundAll();
         let _this = this;
         let infoContainerInfo;
         let mcd;
@@ -685,6 +703,7 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
             if(mcd != null){
                 materialsToPay = _this.getArtifactCraftCost().copy();
                 materialsToPay.multiply(v);
+                materialsToPay.roundAll();
                 mcd.cost = materialsToPay;
                 mcd.updateCostDisplay();
             }
@@ -703,6 +722,14 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
                 ARTIFACTS.gainOrLoseArtifactAmount(_this.selectedArtifact, _this.amountToCraftCurrent);
                 gui.notifyInPanel("Artifacts Crafted!", `You crafted ${_this.amountToCraftCurrent} ` +
                     `${ARTIFACTS.a[_this.selectedArtifact].displayName} artifacts!`);
+
+                // in case the player crafts a "cheaper crafting" artifact
+
+                materialsToPay = _this.getArtifactCraftCost().copy();
+                materialsToPay.multiply(_this.amountToCraftCurrent);
+                materialsToPay.roundAll();
+                mcd.cost = materialsToPay;
+                mcd.updateCostDisplay();
             }
         },"Craft!","");
         
@@ -797,7 +824,12 @@ Liquid.onInfoFilesLoaded("artifactsInfo.json", function(data){
             currentEffect = function(thisArtifact){return tl.currentEffectText};
         else
             currentEffect = tl.currentEffectText;
-        ARTIFACTS.registerArtifactFull(artifact.id, artifact.displayName, artifact.image, desc, currentEffect, onAmountChange, artifact.isUnique, tl.overrides);
+        let cost;
+        if(artifact.cost == null)
+            cost = ARTIFACTS.DEFAULTS.defaultCraftCost.copy();
+        else
+            cost = Materials.fromBuildingInfo(artifact.cost);
+        ARTIFACTS.registerArtifactFull(artifact.id, artifact.displayName, artifact.image, desc, currentEffect, onAmountChange, artifact.isUnique, cost,tl.overrides);
     }
 });
 
@@ -828,6 +860,10 @@ ARTIFACTS.registerArtifact("artifacts_base::artifact_discovery_mult", (a)=>{
 }, (a, amt, f)=>{
     ARTIFACTS.discoveryMultipliers.artifacts_base = a.data.amount * 0.01 + 1;
 });
+
+ARTIFACTS.registerArtifact("artifacts_base::cheaper_artifact_crafts", (a)=>{
+    return `Current reduction: ${(Math.min(7500, ARTIFACTS.a["artifacts_base::cheaper_artifact_crafts"].data.amount) * 0.01).toFixed(2)}%`;
+}, null, null, {canBeMadeCheaper: false});
 
 ARTIFACTS.registerArtifact("artifacts_base::supercomputer_output", "");
 
@@ -912,6 +948,7 @@ ModTools.onCityCreate(function(city){
         let buildingCost = orig.call(this, buildingInfo);
         let mult = Math.min(1000, ARTIFACTS.a["artifacts_base::cheaper_buildings"].data.amount) * 0.0005;
         buildingCost.multiply(1 - mult);
+        buildingCost.roundAll();
         return buildingCost;
     }
 } (progress_BuildingCost.prototype.getBuildingCost));
@@ -921,6 +958,7 @@ ModTools.onCityCreate(function(city){
         let upgradeCost = orig.call(this, buildingInfo);
         let mult = Math.min(1000, ARTIFACTS.a["artifacts_base::cheaper_upgrades"].data.amount) * 0.0005;
         upgradeCost.multiply(1 - mult);
+        upgradeCost.roundAll();
         return upgradeCost;
     }
 } (Materials.fromBuildingUpgradesInfo));

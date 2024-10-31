@@ -4,69 +4,131 @@
         "displayName": "Bonus Happiness",
         "image": "spr_pixl_artifact_bonus_happiness",
         "isUnique": false,
-        "description": "Adds 0.01 happiness per piece! Grants a bonus 0.5 happiness per tier above common!"
+        "description": "Adds 0.01 happiness per piece! Grants a bonus 0.5 happiness per tier above common!",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::cheaper_buildings",
         "displayName": "Cheaper Buildings",
         "image": "spr_pixl_artifact_cheaper_building",
         "isUnique": false,
-        "description": "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)"
+        "description": "Reduces the cost of buildings by 0.05% per piece! (Max 50% discount)",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::cheaper_upgrades",
         "displayName": "Cheaper Upgrades",
         "image": "spr_pixl_artifact_cheaper_upgrades",
         "isUnique": false,
-        "description": "Reduces the cost of building upgrades by 0.05% per piece! (Max 50% discount)"
+        "description": "Reduces the cost of building upgrades by 0.05% per piece! (Max 50% discount)",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::faster_factories",
         "displayName": "Faster Factories",
         "image": "spr_pixl_artifact_faster_factories",
         "isUnique": false,
-        "description": "Speeds up your factories by 0.001x per piece! (Max 2x speed)"
+        "description": "Speeds up your factories by 0.001x per piece! (Max 2x speed)",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::artifact_discovery_mult",
         "displayName": "Higher Artifact Discovery Chance",
         "image": "spr_pixl_artifact_higher_artifact_chance",
         "isUnique": false,
-        "description": "Increase your artifact discovery multiplier by 0.01x per piece!"
+        "description": "Increase your artifact discovery multiplier by 0.01x per piece!",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::supercomputer_output",
         "displayName": "Supercomputer Output",
         "image": "spr_pixl_artifact_double_supercomputer",
         "isUnique": true,
-        "description": "Doubles the output of the supercomputer!"
+        "description": "Doubles the output of the supercomputer!",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::machine_output",
         "displayName": "Machine Output",
         "image": "spr_pixl_artifact_double_machine",
         "isUnique": true,
-        "description": "Doubles the output of the machine!"
+        "description": "Doubles the output of the machine!",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::rocket_fuel_cost",
         "displayName": "Rocket Fuel Cost",
         "image": "spr_pixl_artifact_cheaper_rocket_fuel",
         "isUnique": true,
-        "description": "Halves the fuel cost of rocket missions!"
+        "description": "Halves the fuel cost of rocket missions!",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::extra_housing",
         "displayName": "Bigger Houses",
         "image": "spr_pixl_artifact_bigger_houses",
         "isUnique": true,
-        "description": "Adds one capacity to every house!"
+        "description": "Adds one capacity to every house!",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     },
     {
         "id": "artifacts_base::bonus_housing_quality",
         "displayName": "Fancier Houses",
         "image": "spr_pixl_artifact_better_houses",
         "isUnique": true,
-        "description": "Adds 10 housing quality to every house! (Doesn't show in building window, but it does work!)"
+        "description": "Adds 10 housing quality to every house! (Doesn't show in building window, but it does work!)",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
+    },
+    {
+        "id": "artifacts_base::cheaper_artifact_crafts",
+        "displayName": "Cheaper Artifact Crafting",
+        "image": "spr_artifact_cheaper_artifact_crafting",
+        "isUnique": false,
+        "description": "Artifacts are 0.01% cheaper to craft per piece! (Max 75% reduction)",
+        "cost": {
+            "stone": 1000,
+            "machineParts": 250,
+            "graphene": 5
+        }
     }
 ]
