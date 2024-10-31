@@ -610,12 +610,18 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
         out.knowledge = 10000;
         return out;
     },
+    getArtifactCraftCost: function(){
+        let out = new Materials();
+        out.stone = 100;
+        out.graphene = 1;
+        return out;
+    },
     getAllUnresearchedArtifacts: function(){
         let ids = [];
         for (const [k, v] of Object.entries(ARTIFACTS.a)) {
             if(v.isUnique)
                 continue;
-            if(v.data.hasBeenResearched)
+            if(v.data.hasBeenResearched || !v.data.discoveredPrior)
                 continue;
             ids.push(k);
         }
@@ -626,7 +632,7 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
         for (const [k, v] of Object.entries(ARTIFACTS.a)) {
             if(v.isUnique)
                 continue;
-            if(!v.data.hasBeenResearched)
+            if(!v.data.hasBeenResearched || !v.data.discoveredPrior)
                 continue;
             ids.push(k);
         }
@@ -634,32 +640,85 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
     },
     addWindowInfoLines: function(){
         superClass.prototype.addWindowInfoLines.call(this);
-
-        this.city.gui.windowAddInfoText("Research Artifacts");
         let unresearchedIds = this.getAllUnresearchedArtifacts();
+        let craftableIds = this.getAllResearchedArtifacts();
+        if(craftableIds.length)
+            this.city.gui.windowAddInfoText("Craft Artifacts");
+        let row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
+        let i = 0;
+        for(let id of craftableIds){
+            i++;
+            let artifactButton = this.addArtifactCraft(ARTIFACTS.a[id]);
+            row.addChild(artifactButton);
+            if(i >= 6){
+                this.city.gui.windowInner.addChild(row);
+                row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
+                this.city.gui.windowInner.addChild(new gui_GUISpacing(this.city.gui.windowInner,new common_Point(2,5)));
+                i = 0;
+            }
+        }
+        this.city.gui.windowInner.addChild(row);
+
+        if(unresearchedIds.length)
+            this.city.gui.windowAddInfoText("Research Artifacts");
         for(let id of unresearchedIds){
             let upgradeButton = this.addArtifactResearch(ARTIFACTS.a[id]);
-            this.city.gui.windowInner.addChild(upgradeButton);
+            // this.city.gui.windowInner.addChild(upgradeButton);
         }
     },
-    addArtifactResearch: function(artifact){
-        //function(city,building,upgrade,onUpgrade,canRemoveUpgrade,onButtonClickSound,notForParticularBuilding,onlyIfHasNot) {
-        // gui_CreateBuildingUpgrades.addUpgradeButton(this.city, this, )
-        let _this = this;
-        let city = this.city;
-        let gui = this.city.gui;
-        let tryBuyUpgrade = function(){
-            let canAfford = city.materials.canAfford(_this.getArtifactResearchCost());
-            if(!canAfford)
-                return;
-            city.materials.remove(_this.getArtifactResearchCost());
-            artifact.data.hasBeenResearched = true;
-            _this.reloadWindow();
-        };
-        
-        
+    addArtifactCraft: function(artifact){
+        // let container = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner)
+        let texture = Resources.getTexture(artifact.spr)
+        if (!texture.valid) texture = Resources.getTexture("spr_pixl_artifact_unknown")
+        // let artifactButton = this.city.gui.windowAddSimpleButton(texture, () => {
+        //     // _this.materialFrom = _i;
+        // }, " ")
+        // artifactButton.container.padding = { left : 4, right : 4, top : 4, bottom : 4}
+        // artifactButton.container.margin = { left : 4, right : 4, top : 4, bottom : 4}
+        // artifactButton.rect.width = 28;
+        // artifactButton.rect.height = 28;
 
-        return container
+        //gui,stage,parent,action,isActive,onHover,buttonSpriteName,backColor,frontColor,autoSetProgress  	infoButton.container.addChild(new gui_ContainerHolder(infoButton.container,stage,new PIXI.Sprite(Resources.getTexture(textureName))));
+        
+        let _this = this;
+        let col;
+        let progress = 0;
+
+        col = ((255 - Math.round(progress * 255)) << 16) +
+        ((Math.round(progress * 255)) << 8);
+
+        let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{}, ()=>{return true},
+        ()=>{
+            _this.city.gui.tooltip.setText(this.city.gui.windowInner, artifact.displayName)
+        }, "spr_button", 10526880, col, ()=>{
+            return 0;
+        });
+        upgradeProgressBar.padding = { left : 2, right : 3, top : 2, bottom : 1}
+        upgradeProgressBar.container.addChild(new gui_ContainerHolder(upgradeProgressBar.container,this.city.gui.innerWindowStage,new PIXI.Sprite(texture), { left : 2, right : 2, top : 2, bottom : 2}));
+        return upgradeProgressBar;
+        
+    },
+    addArtifactResearch: function(artifact){
+        let city = this.city;
+        let gui = city.gui;
+        let materialsToPay = this.getArtifactResearchCost();
+        
+        let infoContainerInfo = gui_UpgradeWindowParts.createActivatableButton(gui,false,function() {
+            if(city.materials.canAfford(materialsToPay)) {
+                city.materials.remove(materialsToPay);
+                artifact.data.hasBeenResearched = true;
+                city.gui.reloadWindow();
+            }
+        },artifact.displayName,"");
+        
+        let infoContainer = infoContainerInfo.container;
+        if(materialsToPay.any()) {
+            let mcdContainer = new gui_GUIContainer(gui,gui.innerWindowStage,infoContainer);
+            let mcd = new gui_MaterialsCostDisplay(city,materialsToPay,gui_UpgradeWindowParts.hasMultiUpgradeModeOn ? common_Localize.lo("per_building") : "");
+            let ch = mcdContainer.addChild(new gui_ContainerHolder(mcdContainer,gui.innerWindowStage,mcd,{ left : 0, right : 0, top : 0, bottom : 0},$bind(mcd,mcd.updateCostDisplay)));
+            infoContainer.addChild(mcdContainer);
+        }
+        return infoContainer;
     }
 }}, "spr_artifact_research_center");
 
@@ -761,7 +820,6 @@ function(city, queue, version){
 ModTools.onCityCreate(function(city){
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
         ARTIFACTS.a[k].data = JSON.parse(JSON.stringify(ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT));
-        ARTIFACTS.a[k].onAmountChange(ARTIFACTS.a[k], ARTIFACTS.a[k].data.amount, false);
     }
     ARTIFACTS.updateTiers();
 });
