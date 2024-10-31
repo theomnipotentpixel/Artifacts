@@ -1,6 +1,6 @@
 let dontInit = false;
 let dontInitTiers = false;
-let ARE_ARTIFACT_CHEATS_ENABLED = true;
+let ARE_ARTIFACT_CHEATS_ENABLED = false;
 // in case anyone wants to override things
 if(typeof ARTIFACTS_SHOULD_NOT_INIT !== 'undefined') {
     // if this runs, it means another mod is overriding some of the default mod behavior
@@ -151,7 +151,7 @@ ARTIFACTS.discoverArtifacts = function(amountMin, amountMax, allowUniques, prege
     let generatedArtifacts = {};
     let amountToGenerate = random_Random.getInt(amountMin, amountMax+1);
     if(allApplicable.length == 0){
-        console.warn("WARN: Attempted do discover artifacts, but no applicable artifacts were found! (ARTIFACTS.discoverArtifacts)");
+        console.warn("WARN: Attempted to discover artifacts, but no applicable artifacts were found! (ARTIFACTS.discoverArtifacts)");
         return {};
     }
     for(let i = 0; i < amountToGenerate; i++){
@@ -692,6 +692,7 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
         let city = this.city;
         let gui = city.gui;
         let materialsToPay = this.getArtifactCraftCost();
+        materialsToPay.multiply(this.amountToCraftCurrent);
         materialsToPay.roundAll();
         let _this = this;
         let infoContainerInfo;
@@ -752,7 +753,10 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
 
         col = 0x00ff00;
 
-        let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{_this.selectedArtifact = artifact.id}, ()=>{return true},
+        let upgradeProgressBar = new gui_ContainerButtonWithProgress(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner, ()=>{
+            _this.selectedArtifact = artifact.id;
+            _this.city.gui.reloadWindow();
+        }, ()=>{return true},
         ()=>{
             _this.city.gui.tooltip.setText(this.city.gui.windowInner, artifact.displayName)
         }, "spr_button", 10526880, col, ()=>{
@@ -787,6 +791,12 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
     },
     __constructor__: function(game,stage,bgStage,city,world,position,worldPosition,id){
         this.selectedArtifact = null;
+
+        for(let id of this.getAllResearchedArtifacts()){
+            this.selectedArtifact = id;
+            break;
+        }
+
         this.amountToCraftCurrent = 1;
         superClass.call(this,game,stage,bgStage,city,world,position,worldPosition,id);
     }
