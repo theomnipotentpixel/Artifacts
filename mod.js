@@ -839,15 +839,12 @@ Liquid.onInfoFilesLoaded("artifactsInfo.json", function(data){
             cost = ARTIFACTS.DEFAULTS.defaultCraftCost.copy();
         else
             cost = Materials.fromBuildingInfo(artifact.cost);
-        ARTIFACTS.registerArtifactFull(artifact.id, artifact.displayName, artifact.image, desc, currentEffect, onAmountChange, artifact.isUnique, cost,tl.overrides);
+        ARTIFACTS.registerArtifactFull(artifact.id, artifact.displayName, artifact.image, desc, currentEffect, onAmountChange, artifact.isUnique, cost, tl.overrides);
     }
 });
 
-
 // id, currentEffect, onAmountChange, dynamicDescription|null, overrides|null
 // id, function(thisArtifact), function(thisArtifact, newAmount, isFirst), function(thisArtifact), {onDiscoevrySound}
-
-
 
 ARTIFACTS.registerArtifact("artifacts_base::bonus_happiness", (a)=>{
     return "Currently adding " + (Math.floor((a.data.amount * 0.01 + a.tier * 0.5)*100)/100) + " bonus happiness!";
@@ -889,7 +886,7 @@ ModTools.addSaveDataEarly("pixl::artifacts",
 function(city, queue, version){
     let t = {};
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
-        t[k] = v.data
+        t[k] = v.data;
     }
     // console.log(t);
     queue.addString(JSON.stringify(t));
