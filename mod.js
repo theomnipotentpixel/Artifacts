@@ -382,7 +382,7 @@ ModTools.makeBuilding("pixl_ArtifactGallery", (superClass) => { return {
         ()=>{
             _this.city.gui.tooltip.setText(this.city.gui.windowInner, 
                 artifact.displayName + "\n\n" +
-                (isUnique ? "Unique\n" : `${ARTIFACT_TIERS[artifact.tier].tier}\n`) + (isUnique ? `` : `${artifact.data.amount} / ${ARTIFACT_TIERS[artifact.tier+1].amountNeeded} left for upgrade\n`) +
+                (isUnique ? "Unique\n" : `${ARTIFACT_TIERS[artifact.tier].tier}\n`) + (isUnique ? `` : isMaxTier ? `${artifact.data.amount} (Maxed!)\n` : `${artifact.data.amount} / ${ARTIFACT_TIERS[artifact.tier+1].amountNeeded} left for upgrade\n`) +
                 artifact.getDescription() + "\n" +
                 artifact.getCurrentEffectText(),
                 null,
@@ -660,8 +660,15 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
         superClass.prototype.addWindowInfoLines.call(this);
         let unresearchedIds = this.getAllUnresearchedArtifacts();
         let craftableIds = this.getAllResearchedArtifacts();
+
         if(craftableIds.length){
-                this.city.gui.windowAddInfoText("Craft Artifacts");
+            if(this.selectedArtifact == null){
+                for(let id of this.getAllResearchedArtifacts()){
+                    this.selectedArtifact = id;
+                    break;
+                }
+            }
+            this.city.gui.windowAddInfoText("Craft Artifacts");
             let row = new gui_GUIContainer(this.city.gui, this.city.gui.innerWindowStage, this.city.gui.windowInner);
             let i = 0;
             for(let id of craftableIds){
@@ -711,7 +718,7 @@ ModTools.makeBuilding("pixl_ArtifactResearchCenter", (superClass)=>{ return {
         }
 
         let amountToCraftControl = new gui_NumberSelectControl(gui, gui.innerWindowStage, gui.windowInner, null, ()=>{return 1},
-         ()=>{return 100}, _this.amountToCraftCurrent, onChangeAmount, ()=>{return 1;}, "", 1, 20);
+         ()=>{return 1000}, _this.amountToCraftCurrent, onChangeAmount, ()=>{return 1;}, "", 1, 20);
 
         gui.windowInner.addChild(amountToCraftControl);
 
