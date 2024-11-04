@@ -911,7 +911,7 @@ function(city, queue, version){
     ARTIFACTS.updateTiers();
 }, 0);
 
-// for brand new worlds
+// for brand new worlds, since load(...) doesnt get called
 ModTools.onCityCreate(function(city){
     for (const [k, v] of Object.entries(ARTIFACTS.a)) {
         ARTIFACTS.a[k].data = JSON.parse(JSON.stringify(ARTIFACTS.DEFAULTS.DEFAULT_ARTIFACT));
